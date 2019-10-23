@@ -26,6 +26,12 @@ env:
 matrix:
   fast_finish: true
   include:
+    - name: arm64
+      os: linux
+      arch: arm64
+      script:
+        - make check
+
     - name: Trusty (Test All)
       script:
         - make test
