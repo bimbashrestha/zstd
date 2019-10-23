@@ -30,7 +30,7 @@ matrix:
       os: linux
       arch: arm64
       script:
-        - make check
+        - make test
 
     - name: Trusty (Test All)
       script:
