@@ -172,12 +172,7 @@
       SET ZSTD=./zstd.exe &&
       sh -e playTests.sh --test-large-data &&
       fullbench.exe -i1 &&
-      fullbench.exe -i1 -P0 &&
-      fuzzer_VS2008_%PLATFORM%_Release.exe %FUZZERTEST% &&
-      fuzzer_VS2010_%PLATFORM%_Release.exe %FUZZERTEST% &&
-      fuzzer_VS2012_%PLATFORM%_Release.exe %FUZZERTEST% &&
-      fuzzer_VS2013_%PLATFORM%_Release.exe %FUZZERTEST% &&
-      fuzzer_VS2015_%PLATFORM%_Release.exe %FUZZERTEST%
+      fullbench.exe -i1 -P0
     )
 
 
@@ -264,6 +259,5 @@
   - ECHO Testing %COMPILER% %PLATFORM% %CONFIGURATION%
   - if [%HOST%]==[mingw] (
       set "CC=%COMPILER%" &&
-      make check &&
-      sh -e playTests.sh --test-large-data
+      make check
     )
