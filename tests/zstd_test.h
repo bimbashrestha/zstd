@@ -46,22 +46,28 @@ struct ZSTD_Test {
 #define ZSTD_TEST_SECTION                                                      \
   __attribute__((used, section("__DATA, .ZSTD_Test"), aligned(1)))
 #elif defined(_MSC_VER)
-#pragma data_seg(push)
 #pragma data_seg(".ZSTD_Test$u")
-#pragma data_seg(pop)
-#define ZSTD_TEST_SECTION                                                     \
-  __declspec(allocate(".ZSTD_Test$u")) __declspec(align(1))
+#define ZSTD_TEST_SECTION __declspec(allocate(".ZSTD_Test$u"))
 #else
 #define ZSTD_TEST_SECTION                                                      \
   __attribute__((used, section(".ZSTD_Test"), aligned(1)))
 #endif
 
+#if defined(_MSC_VER)
 #define ZSTD_TEST_STRUCT(suiteName, testName)                                  \
   static struct ZSTD_Test ZSTD_TEST_SECTION ZSTD_TEST_TNAME(                   \
       suiteName, testName) = {.suite = #suiteName,                             \
                               .test = #testName,                               \
                               .testFn = ZSTD_TEST_FNAME(suiteName, testName),  \
                               .sentinal = ZSTD_TEST_SENTINAL}
+#else
+#define ZSTD_TEST_STRUCT(suiteName, testName)                                  \
+  static struct ZSTD_Test ZSTD_TEST_TNAME(suiteName, testName)                 \
+      ZSTD_TEST_SECTION = {.suite = #suiteName,                                \
+                           .test = #testName,                                  \
+                           .testFn = ZSTD_TEST_FNAME(suiteName, testName),     \
+                           .sentinal = ZSTD_TEST_SENTINAL}
+#endif
 
 /* ZSTD_TEST
  * @arg suiteName: the name of the test suite (ie. test category)
