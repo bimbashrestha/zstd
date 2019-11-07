@@ -304,13 +304,13 @@ list:
 
 .PHONY: shortest
 shortest: ZSTDRTTEST=
-shortest: test-zstd
+shortest: test-correctness-tests test-zstd
 
 .PHONY: fuzztest
 fuzztest: test-fuzzer test-zstream test-decodecorpus
 
 .PHONY: test
-test: test-zstd test-fullbench test-fuzzer test-zstream test-invalidDictionaries test-legacy test-decodecorpus
+test: test-correctness-tests test-zstd test-fullbench test-fuzzer test-zstream test-invalidDictionaries test-legacy test-decodecorpus
 ifeq ($(QEMU_SYS),)
 test: test-pool
 endif
@@ -373,6 +373,9 @@ test-fullbench32: fullbench32 datagen
 
 test-fuzzer: fuzzer
 	$(QEMU_SYS) ./fuzzer -v $(FUZZERTEST) $(FUZZER_FLAGS)
+
+test-correctness-tests: correctness_tests
+	$(QEMU_SYS) ./correctness_tests
 
 test-fuzzer-stackmode: MOREFLAGS += -DZSTD_HEAPMODE=0
 test-fuzzer-stackmode: test-fuzzer
