@@ -49,7 +49,7 @@ struct ZSTD_Test {
 #pragma data_seg(push)
 #pragma data_seg(".ZSTD_Test")
 #pragma data_seg(pop)
-#define CTEST_IMPL_SECTION                                                     \
+#define ZSTD_TEST_SECTION                                                     \
   __declspec(allocate(".ZSTD_Test")) __declspec(align(1))
 #else
 #define ZSTD_TEST_SECTION                                                      \
