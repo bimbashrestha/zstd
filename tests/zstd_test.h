@@ -42,8 +42,8 @@ struct ZSTD_Test {
 /* Magic value we use to iterate through the tests */
 #define ZSTD_TEST_SENTINAL 11111111
 
-#if defined(_MSC_VER) && !defined(__MINGW32__) && !defined(__MINGW64__)
-#define ZSTD_TEST_SECTION                                                      \
+#if !defined(__clang__) && defined(_MSC_VER)
+#define ZSTD_TEST_SECTION                                                 \
   __declspec(allocate(".ZSTD_Test")) __declspec(align(1))
 #elif defined(__APPLE__)
 #define ZSTD_TEST_SECTION                                                      \
