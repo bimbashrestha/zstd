@@ -147,12 +147,14 @@ fullbench-dll: $(PRGDIR)/datagen.c $(PRGDIR)/util.c $(PRGDIR)/benchfn.c $(PRGDIR
 #	$(CC) $(FLAGS) $(filter %.c,$^) -o $@$(EXT) -DZSTD_DLL_IMPORT=1 $(ZSTDDIR)/dll/libzstd.dll
 	$(CC) $(FLAGS) $(filter %.c,$^) -o $@$(EXT)
 
-fuzzer  : CPPFLAGS += $(MULTITHREAD_CPP)
-fuzzer  : LDFLAGS += $(MULTITHREAD_LD)
+fuzzer correctness_tests: CPPFLAGS += $(MULTITHREAD_CPP)
+fuzzer correctness_tests: LDFLAGS += $(MULTITHREAD_LD)
 fuzzer32: CFLAGS += -m32
-fuzzer  : $(ZSTDMT_OBJECTS)
+fuzzer correctness_tests: $(ZSTDMT_OBJECTS)
 fuzzer32: $(ZSTD_FILES)
 fuzzer fuzzer32 : $(ZDICT_FILES) $(PRGDIR)/util.c $(PRGDIR)/timefn.c $(PRGDIR)/datagen.c fuzzer.c
+	$(CC) $(FLAGS) $^ -o $@$(EXT)
+correctness_tests: $(ZDICT_FILES) $(PRGDIR)/util.c $(PRGDIR)/timefn.c $(PRGDIR)/datagen.c correctness_tests.c
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
 fuzzer-dll : zstd-dll
