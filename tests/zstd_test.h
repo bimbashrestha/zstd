@@ -22,16 +22,26 @@ jmp_buf jmpBuf;
 
 /* Struct for unit test. Just has a callback function.
  * TODO: Add data to this so that function can be passed arguments */
+
+#if defined(_MSC_VER)
+gcc_struct ZSTD_Test {
+  const char *suite;
+  const char *test;
+  void (*testFn)(void);
+  unsigned int sentinal;
+};
+#else
 struct ZSTD_Test {
   const char *suite;
   const char *test;
   void (*testFn)(void);
   unsigned int sentinal;
 };
+#endif
 
-/*-************************************
- *  ZSTD_TEST macros
- **************************************/
+  /*-************************************
+   *  ZSTD_TEST macros
+   **************************************/
 
 #define ZSTD_TEST_NAME(name) ZSTD_TEST_##name
 #define ZSTD_TEST_FNAME(suiteName, testName)                                   \
