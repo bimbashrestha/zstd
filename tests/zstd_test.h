@@ -45,7 +45,7 @@ struct ZSTD_Test {
 #if defined(__APPLE__)
 #define ZSTD_TEST_SECTION                                                      \
   __attribute__((used, section("__DATA, .ZSTD_Test"), aligned(1)))
-#elif defined(_MSC_VER)
+#elif defined(_MSC_VER_)
 #pragma data_seg(".ZSTD_Test$u")
 #define ZSTD_TEST_SECTION __declspec(allocate(".ZSTD_Test$u"))
 #else
@@ -53,7 +53,8 @@ struct ZSTD_Test {
   __attribute__((used, section(".ZSTD_Test"), aligned(1)))
 #endif
 
-#if defined(_MSC_VER)
+/* This creates the struct for each test */
+#if defined(_MSC_VER_)
 #define ZSTD_TEST_STRUCT(suiteName, testName)                                  \
   static struct ZSTD_Test ZSTD_TEST_SECTION ZSTD_TEST_TNAME(                   \
       suiteName, testName) = {.suite = #suiteName,                             \
@@ -121,7 +122,7 @@ static int ZSTD_TEST_main(void) {
   for (test = start; test != end; test++) {
     if (test == &ZSTD_TEST_TNAME(dummySuiteName, dummyTestName))
       continue;
-    printf("[TEST %lu/%lu %s:%s] ", idx, total, test->suite, test->test);
+    printf("[TEST %u/%u %s:%s] ", idx, total, test->suite, test->test);
     if (!setjmp(jmpBuf)) {
       /* Test passed */
       test->testFn();
@@ -133,7 +134,7 @@ static int ZSTD_TEST_main(void) {
     }
     idx++;
   }
-  printf("%lu PASSED %lu FAILED\n", nbPassed, total - nbPassed);
+  printf("%u PASSED %u FAILED\n", nbPassed, total - nbPassed);
 
   /* Abort at the end when there is at least one assert failure */
   if (nbPassed != total)
