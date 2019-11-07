@@ -45,11 +45,15 @@ struct ZSTD_Test {
 #if defined(__APPLE__)
 #define ZSTD_TEST_SECTION                                                      \
   __attribute__((used, section("__DATA, .ZSTD_Test"), aligned(1)))
-#elif !defined(_MSC_VER)
+#elif defined(_MSC_VER)
+#pragma data_seg(push)
+#pragma data_seg(".ZSTD_Test$u")
+#pragma data_seg(pop)
+#define CTEST_IMPL_SECTION                                                     \
+  __declspec(allocate(".ZSTD_Test$u")) __declspec(align(1))
+#else
 #define ZSTD_TEST_SECTION                                                      \
   __attribute__((used, section(".ZSTD_Test"), aligned(1)))
-#else
-#define ZSTD_TEST_SECTION
 #endif
 
 #define ZSTD_TEST_STRUCT(suiteName, testName)                                  \
