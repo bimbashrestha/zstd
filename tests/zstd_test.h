@@ -42,23 +42,22 @@ struct ZSTD_Test {
 /* Magic value we use to iterate through the tests */
 #define ZSTD_TEST_SENTINAL 11111111
 
-#if !defined(__clang__) && defined(_MSC_VER)
-#define ZSTD_TEST_SECTION                                                 \
-  __declspec(allocate(".ZSTD_Test")) __declspec(align(1))
-#elif defined(__APPLE__)
+#if defined(__APPLE__)
 #define ZSTD_TEST_SECTION                                                      \
   __attribute__((used, section("__DATA, .ZSTD_Test"), aligned(1)))
-#else
+#elif !defined(_MSC_VER)
 #define ZSTD_TEST_SECTION                                                      \
   __attribute__((used, section(".ZSTD_Test"), aligned(1)))
+#else
+#define ZSTD_TEST_SECTION
 #endif
 
 #define ZSTD_TEST_STRUCT(suiteName, testName)                                  \
-  static struct ZSTD_Test ZSTD_TEST_TNAME(suiteName, testName)                 \
-      ZSTD_TEST_SECTION = {.suite = #suiteName,                                \
-                           .test = #testName,                                  \
-                           .testFn = ZSTD_TEST_FNAME(suiteName, testName),     \
-                           .sentinal = ZSTD_TEST_SENTINAL}
+  static struct ZSTD_Test ZSTD_TEST_SECTION ZSTD_TEST_TNAME(                   \
+      suiteName, testName) = {.suite = #suiteName,                             \
+                              .test = #testName,                               \
+                              .testFn = ZSTD_TEST_FNAME(suiteName, testName),  \
+                              .sentinal = ZSTD_TEST_SENTINAL}
 
 /* ZSTD_TEST
  * @arg suiteName: the name of the test suite (ie. test category)
