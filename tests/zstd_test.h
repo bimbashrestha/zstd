@@ -11,6 +11,7 @@
 
 #include <setjmp.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 /* Using this when an assert fails to keep processing subsequent tests and
  * not just abort like fuzzer.c. We abort at the end when there is a assert
@@ -22,26 +23,16 @@ jmp_buf jmpBuf;
 
 /* Struct for unit test. Just has a callback function.
  * TODO: Add data to this so that function can be passed arguments */
-
-#if defined(_MSC_VER)
-gcc_struct ZSTD_Test {
-  const char *suite;
-  const char *test;
-  void (*testFn)(void);
-  unsigned int sentinal;
-};
-#else
 struct ZSTD_Test {
   const char *suite;
   const char *test;
   void (*testFn)(void);
   unsigned int sentinal;
 };
-#endif
 
-  /*-************************************
-   *  ZSTD_TEST macros
-   **************************************/
+/*-************************************
+ *  ZSTD_TEST macros
+ **************************************/
 
 #define ZSTD_TEST_NAME(name) ZSTD_TEST_##name
 #define ZSTD_TEST_FNAME(suiteName, testName)                                   \
@@ -57,7 +48,7 @@ struct ZSTD_Test {
   __attribute__((used, section("__DATA, .ZSTD_Test"), aligned(1)))
 #elif defined(_MSC_VER_)
 #pragma data_seg(".ZSTD_Test$u")
-#define ZSTD_TEST_SECTION __declspec(allocate(".ZSTD_Test$u"))
+#define ZSTD_TEST_SECTION __declspec(allocate(".ZSTD_Test$u"), align(1))
 #else
 #define ZSTD_TEST_SECTION                                                      \
   __attribute__((used, section(".ZSTD_Test"), aligned(1)))
