@@ -154,7 +154,7 @@ fuzzer correctness_tests: $(ZSTDMT_OBJECTS)
 fuzzer32: $(ZSTD_FILES)
 fuzzer fuzzer32 : $(ZDICT_FILES) $(PRGDIR)/util.c $(PRGDIR)/timefn.c $(PRGDIR)/datagen.c fuzzer.c
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
-correctness_tests: $(ZDICT_FILES) $(PRGDIR)/util.c $(PRGDIR)/timefn.c $(PRGDIR)/datagen.c correctness_tests.c
+correctness_tests: $(ZDICT_FILES) $(PRGDIR)/util.c $(PRGDIR)/timefn.c $(PRGDIR)/datagen.c zstd_test.h correctness_tests.c
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
 fuzzer-dll : zstd-dll
