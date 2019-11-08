@@ -46,7 +46,7 @@ struct ZSTD_Test {
 #if defined(__APPLE__)
 #define ZSTD_TEST_SECTION                                                      \
   __attribute__((used, section("__DATA, .ZSTD_Test"), aligned(1)))
-#elif defined(_MSC_VER_)
+#elif defined(_MSC_VER)
 #pragma data_seg(".ZSTD_Test$u")
 #define ZSTD_TEST_SECTION __declspec(allocate(".ZSTD_Test$u"), align(1))
 #else
@@ -55,7 +55,7 @@ struct ZSTD_Test {
 #endif
 
 /* This creates the struct for each test */
-#if defined(_MSC_VER_)
+#if defined(_MSC_VER)
 #define ZSTD_TEST_STRUCT(suiteName, testName)                                  \
   static struct ZSTD_Test ZSTD_TEST_SECTION ZSTD_TEST_TNAME(                   \
       suiteName, testName) = {.suite = #suiteName,                             \
