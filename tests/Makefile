@@ -155,6 +155,15 @@ fuzzer32: $(ZSTD_FILES)
 fuzzer fuzzer32 : $(ZDICT_FILES) $(PRGDIR)/util.c $(PRGDIR)/timefn.c $(PRGDIR)/datagen.c fuzzer.c
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
+deppool: CPPFLAGS += $(MULTITHREAD_CPP)
+deppool: LDFLAGS += $(MULTITHREAD_LD)
+deppool: $(ZSTDMT_OBJECTS)
+deppool: deppool-test.c
+	$(CC) $(FLAGS) -O0 $^ -o $@$(EXT)
+
+deppool-test: deppool
+	$(PYTHON) deppool-test.py
+
 fuzzer-dll : zstd-dll
 fuzzer-dll : LDFLAGS+= -L$(ZSTDDIR) -lzstd
 fuzzer-dll : $(ZSTDDIR)/common/xxhash.c $(PRGDIR)/util.c $(PRGDIR)/timefn.c $(PRGDIR)/datagen.c fuzzer.c

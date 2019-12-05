@@ -11,7 +11,7 @@
 #include <stddef.h>
 #include "debug.h"
 #include "zstd_internal.h"
-#include "zstdmt_threadpool.h"
+#include "zstdmt_deppool.h"
 
 #if defined(_MSC_VER)
 #  pragma warning(disable : 4204)
@@ -66,7 +66,7 @@ static void ZSTDMT_LinkedList_del(ZSTDMT_LinkedList* list, ZSTDMT_LinkedListNode
 
 /* ZSTDMT_JobStatus
  * ----------------
- * I'm using this enum to indicate the result of ZSTDMT_ThreadPool_nextReadyJob() */
+ * I'm using this enum to indicate the result of ZSTDMT_DepPool_nextReadyJob() */
 
 typedef enum {ZSTDMT_JobReadyInThreadPool, ZSTDMT_NoReadyJobsInThreadPool, ZSTDMT_AllJobsStartedInThreadPool} ZSTDMT_JobStatus;
 
@@ -89,14 +89,14 @@ typedef struct {
     size_t jobId;
 } ZSTDMT_Job;
 
-/* ZSTDMT_ThreadPool context
+/* ZSTDMT_DepPool context
  * -------------------------
  * Has a cond for knowing when jobs are ready to be run. 'allJobsSupplied'
  * is set when the user of the ThreadPool has finished adding all jobs */
 
 #define MAX_NB_THREADS 64
 #define MAX_NB_JOBS 1024 * 10000
-struct ZSTDMT_ThreadPool_s {
+struct ZSTDMT_DepPool_s {
     ZSTD_pthread_mutex_t mutex;
     ZSTD_pthread_cond_t cond;
     ZSTD_pthread_t threads[MAX_NB_THREADS];
@@ -107,7 +107,7 @@ struct ZSTDMT_ThreadPool_s {
     int allJobsSupplied;
 };
 
-static ZSTDMT_JobStatus ZSTDMT_ThreadPool_nextReadyJob(ZSTDMT_Job** nextJob, ZSTDMT_ThreadPool* pool)
+static ZSTDMT_JobStatus ZSTDMT_DepPool_nextReadyJob(ZSTDMT_Job** nextJob, ZSTDMT_DepPool* pool)
 {
     int jobsListEmpty = 1;
     ZSTDMT_LinkedListNode* node;
@@ -131,17 +131,17 @@ static ZSTDMT_JobStatus ZSTDMT_ThreadPool_nextReadyJob(ZSTDMT_Job** nextJob, ZST
     return !jobsListEmpty ? ZSTDMT_NoReadyJobsInThreadPool : ZSTDMT_AllJobsStartedInThreadPool;
 }
 
-static void* ZSTDMT_ThreadPool_threadRoutine(void* data)
+static void* ZSTDMT_DepPool_threadRoutine(void* data)
 {
-    ZSTDMT_ThreadPool* pool = (ZSTDMT_ThreadPool*)data;
+    ZSTDMT_DepPool* pool = (ZSTDMT_DepPool*)data;
 
     /* Lock the pool mutex to start because we're going to use it
-     * inside ZSTDMT_ThreadPool_nextReadyJob() */
+     * inside ZSTDMT_DepPool_nextReadyJob() */
 
     ZSTD_pthread_mutex_lock(&pool->mutex);
     while (1) {
         ZSTDMT_Job* job;
-        ZSTDMT_JobStatus jobStatus = ZSTDMT_ThreadPool_nextReadyJob(&job, pool);
+        ZSTDMT_JobStatus jobStatus = ZSTDMT_DepPool_nextReadyJob(&job, pool);
 
         /* If all the jobs enqueued so far have at least started and the
          * user has told us that they are done adding jobs, we can break
@@ -159,7 +159,7 @@ static void* ZSTDMT_ThreadPool_threadRoutine(void* data)
 
         /* We remove the node corresponding to the job so that
          * we don't iterate through it anymore when we call
-         * ZSTDMT_ThreadPool_nextReadyJob(). The job isn't freed as
+         * ZSTDMT_DepPool_nextReadyJob(). The job isn't freed as
          * its dependents might still need access to the finished flag */
 
         ZSTDMT_LinkedList_del(pool->jobsList, job->node);
@@ -194,13 +194,12 @@ static void* ZSTDMT_ThreadPool_threadRoutine(void* data)
     return NULL;
 }
 
-/*-*******************************************************
- *  Thread Pool API
- *********************************************************/
+/* Thread Pool api
+ * --------------- */
 
-ZSTDMT_ThreadPool* ZSTDMT_ThreadPool_create(size_t nbThreads)
+ZSTDMT_DepPool* ZSTDMT_DepPool_create(size_t nbThreads)
 {
-    ZSTDMT_ThreadPool* pool = (ZSTDMT_ThreadPool*)ZSTD_malloc(sizeof(ZSTDMT_ThreadPool), ZSTD_defaultCMem);
+    ZSTDMT_DepPool* pool = (ZSTDMT_DepPool*)ZSTD_malloc(sizeof(ZSTDMT_DepPool), ZSTD_defaultCMem);
 
     int error = 0;
 
@@ -210,7 +209,7 @@ ZSTDMT_ThreadPool* ZSTDMT_ThreadPool_create(size_t nbThreads)
       error |= ZSTD_pthread_cond_init(&pool->cond, NULL);}
     { size_t i;
       for (i = 0; i < nbThreads; i++)
-        error |= ZSTD_pthread_create(&pool->threads[i], NULL, ZSTDMT_ThreadPool_threadRoutine, (void*)pool);}
+        error |= ZSTD_pthread_create(&pool->threads[i], NULL, ZSTDMT_DepPool_threadRoutine, (void*)pool);}
 
     /* Bail if there is something wrong when initializing the mutex,
      * cond or pthreads above */
@@ -219,7 +218,7 @@ ZSTDMT_ThreadPool* ZSTDMT_ThreadPool_create(size_t nbThreads)
     return pool;
 }
 
-void ZSTDMT_ThreadPool_wait(ZSTDMT_ThreadPool* pool)
+void ZSTDMT_DepPool_wait(ZSTDMT_DepPool* pool)
 {
     ZSTD_pthread_mutex_lock(&pool->mutex);
 
@@ -238,7 +237,7 @@ void ZSTDMT_ThreadPool_wait(ZSTDMT_ThreadPool* pool)
         ZSTD_pthread_join(pool->threads[i], NULL);}
 }
 
-void ZSTDMT_ThreadPool_free(ZSTDMT_ThreadPool* pool)
+void ZSTDMT_DepPool_free(ZSTDMT_DepPool* pool)
 {
     ZSTDMT_LinkedList_free(pool->jobsList);
 
@@ -250,7 +249,7 @@ void ZSTDMT_ThreadPool_free(ZSTDMT_ThreadPool* pool)
     ZSTD_free(pool, ZSTD_defaultCMem);
 }
 
-size_t ZSTDMT_ThreadPool_add(ZSTDMT_ThreadPool* pool, void (*function)(void*), void* functionData,
+size_t ZSTDMT_DepPool_add(ZSTDMT_DepPool* pool, void (*function)(void*), void* functionData,
                              size_t* dependencyJobIds, size_t nbDependencies)
 {
     size_t jobId;
