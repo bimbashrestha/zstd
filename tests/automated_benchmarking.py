@@ -40,25 +40,27 @@ def get_open_prs(prev_state=True):
     return [pr for url, pr in prs.items() if url not in prev_prs or prev_prs[url] != pr]
 
 
-def get_latest_hash():
+def convert_to_full_hash(short):
+    print(short)
+    os.system("git show {} --pretty=raw &> tmp_inner".format(short))
+    with open("tmp_inner", "r") as f:
+        tmp = f.read()
+        sha = tmp.split("\n")[0].split(" ")[1]
+    os.system("rm -rf tmp_inner")
+    return sha
+
+def get_latest_hashes():
     os.system("git log -1 &> tmp")
     with open("tmp", "r") as f:
         tmp = f.read()
-        sha = tmp.split("\n")[0].split(" ")[1]
+        sha1 = tmp.split("\n")[0].split(" ")[1]
+        sha2 = convert_to_full_hash(tmp.split("\n")[1].split(" ")[1])
+        sha3 = convert_to_full_hash(tmp.split("\n")[1].split(" ")[2])
     os.system("rm -rf tmp")
-    return sha.strip()
-
-def get_parent_hash(sha, idx):
-    os.system("git show {}^{} &> tmp".format(sha, idx))
-    with open("tmp", "r") as f:
-        tmp = f.read()
-        sha = tmp.split("\n")[0].split(" ")[1]
-    os.system("rm -rf tmp")
-    return sha.strip()
+    return [sha1.strip(), sha2.strip(), sha3.strip()]
 
 def get_build_for_latest_hash():
-    latest_hash = get_latest_hash()
-    hashes = [latest_hash, get_parent_hash(latest_hash, 1), get_parent_hash(latest_hash, 2)]
+    hashes = get_latest_hashes()
     print(hashes)
     builds = get_open_prs(False)
     for b in builds:
