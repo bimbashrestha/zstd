@@ -24,7 +24,7 @@ def get_open_prs(prev_state=True):
     if os.path.exists(PREVIOUS_PRS_FILENAME):
         with open(PREVIOUS_PRS_FILENAME, "rb") as f:
             prev_prs = pk.load(f)
-    data = json.loads(str(urllib.request.urlopen(GITHUB_API_PR_URL).read()))
+    data = json.loads(urllib.request.urlopen(GITHUB_API_PR_URL).read().decode("utf-8"))
     prs = {
         d["url"]: {
             "user": d["user"]["login"],
