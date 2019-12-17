@@ -1,10 +1,10 @@
 import argparse
 import glob
+import json
 import os
 import pickle as pk
-import urllib.request
-import json
 import subprocess
+import urllib.request
 
 
 GITHUB_API_PR_URL = "https://api.github.com/repos/bimbashrestha/zstd/pulls?state=open"
@@ -41,27 +41,21 @@ def get_open_prs(prev_state=True):
     return [pr for url, pr in prs.items() if url not in prev_prs or prev_prs[url] != pr]
 
 
-def convert_to_full_hash(short):
-    print(short)
-    os.system("git show {} --pretty=raw &> tmp_inner".format(short))
-    with open("tmp_inner", "r") as f:
-        tmp = f.read()
-        sha = tmp.split("\n")[0].split(" ")[1]
-    os.system("rm -rf tmp_inner")
-    return sha
-
 def get_latest_hashes():
-    res = subprocess.run(['git', 'log', '-1'], stdout=subprocess.PIPE)
-    print("res:", res)
-    os.system("git log -1 &> tmp")
-    with open("tmp", "r") as f:
-        tmp = f.read()
-        print("tmp", tmp)
-        sha1 = tmp.split("\n")[0].split(" ")[1]
-        sha2 = convert_to_full_hash(tmp.split("\n")[1].split(" ")[1])
-        sha3 = convert_to_full_hash(tmp.split("\n")[1].split(" ")[2])
-    os.system("rm -rf tmp")
+    tmp = subprocess.run(["git", "log", "-1"], stdout=subprocess.PIPE).stdout.decode(
+        "utf-8"
+    )
+    sha1 = tmp.split("\n")[0].split(" ")[1]
+    tmp = subprocess.run(
+        ["git", "show", "{}^1".format(sha1)], stdout=subprocess.PIPE
+    ).stdout.decode("utf-8")
+    sha2 = tmp.split("\n")[0].split(" ")[1]
+    tmp = subprocess.run(
+        ["git", "show", "{}^2".format(sha1)], stdout=subprocess.PIPE
+    ).stdout.decode("utf-8")
+    sha3 = "" if len(tmp) == 0 else tmp.split("\n")[0].split(" ")[1]
     return [sha1.strip(), sha2.strip(), sha3.strip()]
+
 
 def get_build_for_latest_hash():
     hashes = get_latest_hashes()
@@ -95,13 +89,11 @@ def clone_and_build(build):
 
 
 def bench(executable, level, filename):
-    os.system("{} -qb{} {} &> tmp".format(executable, level, filename))
-    with open("tmp", "r") as f:
-        output = f.read().split(" ")
-        idx = [i for i, d in enumerate(output) if d == "MB/s"]
-        cspeed, dspeed = float(output[idx[0] - 1]), float(output[idx[1] - 1])
-    os.system("rm -rf tmp")
-    return [cspeed, dspeed]
+    tmp = subprocess.run(
+        [executable, "-qb{}".format(level), filename], stderr=subprocess.PIPE
+    ).stderr.decode("utf-8").split(" ")
+    idx = [i for i, d in enumerate(tmp) if d == "MB/s"]
+    return [float(tmp[idx[0] - 1]), float(tmp[idx[1] - 1])]
 
 
 def bench_n(executable, level, filename, n=N_BENCHMARK_ITERATIONS):
