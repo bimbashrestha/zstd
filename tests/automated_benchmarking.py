@@ -47,13 +47,19 @@ def get_latest_hash():
     os.system("rm -rf tmp")
     return sha.strip()
 
+def get_parent_hash(sha, idx):
+    os.system("git show {}^{} &> tmp".format(sha, idx))
+    with open("tmp", "r") as f:
+        tmp = f.read()
+        sha = tmp.split("\n")[0].split(" ")[1]
+    return sha
 
 def get_build_for_latest_hash():
     latest_hash = get_latest_hash()
+    hashes = [latest_hash, get_parent_hash(latest_hash, 1), get_parent_hash(latest_hash, 2)]
     builds = get_open_prs(False)
     for b in builds:
-        print(b["hash"], b["branch"], latest_hash)
-        if b["hash"] == latest_hash:
+        if b["hash"] in hashes:
             return [b]
     return []
 
