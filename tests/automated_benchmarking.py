@@ -41,11 +41,10 @@ def get_open_prs(prev_state=True):
 
 
 def get_latest_hash():
-    print("git log -1")
-    os.system("git log -1")
-    os.system("git rev-parse HEAD &> tmp")
+    os.system("git log -1 &> tmp")
     with open("tmp", "r") as f:
-        sha = f.read()
+        tmp = f.read()
+        sha = tmp.split("\n")[0].split(" ")[1]
     os.system("rm -rf tmp")
     return sha.strip()
 
@@ -55,11 +54,11 @@ def get_parent_hash(sha, idx):
         tmp = f.read()
         sha = tmp.split("\n")[0].split(" ")[1]
     os.system("rm -rf tmp")
-    return sha
+    return sha.strip()
 
 def get_build_for_latest_hash():
     latest_hash = get_latest_hash()
-    hashes = [latest_hash]
+    hashes = [latest_hash, get_parent_hash(latest_hash, 1), get_parent_hash(latest_hash, 2)]
     print(hashes)
     builds = get_open_prs(False)
     for b in builds:
