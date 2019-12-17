@@ -53,6 +53,7 @@ def get_latest_hashes():
     os.system("git log -1 &> tmp")
     with open("tmp", "r") as f:
         tmp = f.read()
+        print("tmp", tmp)
         sha1 = tmp.split("\n")[0].split(" ")[1]
         sha2 = convert_to_full_hash(tmp.split("\n")[1].split(" ")[1])
         sha3 = convert_to_full_hash(tmp.split("\n")[1].split(" ")[2])
