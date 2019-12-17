@@ -7,7 +7,7 @@ import subprocess
 import urllib.request
 
 
-GITHUB_API_PR_URL = "https://api.github.com/repos/bimbashrestha/zstd/pulls?state=open"
+GITHUB_API_PR_URL = "https://api.github.com/repos/facebook/zstd/pulls?state=open"
 GIRHUB_URL_TEMPLATE = "https://github.com/{}/zstd"
 MASTER_BUILD = {"user": "facebook", "branch": "dev", "hash": None}
 PREVIOUS_PRS_FILENAME = "prev_prs.pk"
@@ -114,8 +114,9 @@ def benchmark_n(executable, level, filename, n):
 
 
 def benchmark(build, filenames, levels, iterations):
+    executable = clone_and_build(build)
     return [
-        [benchmark_n(clone_and_build(build), l, f, iterations) for f in filenames] for l in levels
+        [benchmark_n(executable, l, f, iterations) for f in filenames] for l in levels
     ]
 
 
@@ -167,7 +168,9 @@ def main(filenames, levels, iterations, builds=None, emails=None, continuous=Fal
         builds = get_new_open_pr_builds()
     while True:
         for test_build in builds:
-            regressions = get_regressions(MASTER_BUILD, test_build, iterations, filenames, levels)
+            regressions = get_regressions(
+                MASTER_BUILD, test_build, iterations, filenames, levels
+            )
             body = "\n".join(regressions)
             if len(regressions) > 0:
                 if emails != None:
@@ -206,7 +209,7 @@ if __name__ == "__main__":
     filenames = glob.glob("{}/**".format(args.directory))
     levels = [int(l) for l in args.levels.split(",")]
     mode = args.mode
-    iterations = args.iterations
+    iterations = int(args.iterations)
     emails = args.emails
 
     if mode == "0":

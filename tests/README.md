@@ -23,7 +23,7 @@ In the following step interoperability between zstd versions is checked.
 #### `automated-benchmarking.py` - script for benchmarking zstd prs to dev
 
 This script benchmarks facebook:dev and changes from pull requests made to zstd and compares
-them against each other to detect regressions. This script currently runs on a dedicated
+them against facebook:dev to detect regressions. This script currently runs on a dedicated
 desktop machine for every pull request that is made to the zstd repo but can also
 be run on any machine via the command line interface.
 
@@ -34,7 +34,7 @@ continuously run mode 1 when a new pull request is added or when an existing pul
 request gets a new commit.
 
 ```
-Example usage: python automated_benchmarking.py fuzz "1,2,3" "0" 1 ""
+Example usage: python automated_benchmarking.py fuzz "1,2,3" "0" "1" ""
 ```
 
 ```
