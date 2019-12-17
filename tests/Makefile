@@ -238,7 +238,7 @@ versionsTest: clean
 	$(PYTHON) test-zstd-versions.py
 
 automated_benchmarking: clean
-	$(PYTHON) automated_benchmarking.py fuzz "1" "0" ""
+	$(PYTHON) automated_benchmarking.py fuzz "1" "1" 1 ""
 
 checkTag: checkTag.c $(ZSTDDIR)/zstd.h
 	$(CC) $(FLAGS) $< -o $@$(EXT)

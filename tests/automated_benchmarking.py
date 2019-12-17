@@ -17,10 +17,9 @@ PREVIOUS_PRS_FILENAME = "prev_prs.pk"
 # that I'm running it on is pretty stable so I think this is fine
 CSPEED_REGRESSION_TOLERANCE = 0.01
 DSPEED_REGRESSION_TOLERANCE = 0.01
-N_BENCHMARK_ITERATIONS = 5
 
 
-def get_open_prs(prev_state=True):
+def get_new_open_pr_builds(prev_state=True):
     prev_prs = None
     if os.path.exists(PREVIOUS_PRS_FILENAME):
         with open(PREVIOUS_PRS_FILENAME, "rb") as f:
@@ -57,11 +56,9 @@ def get_latest_hashes():
     return [sha1.strip(), sha2.strip(), sha3.strip()]
 
 
-def get_build_for_latest_hash():
+def get_builds_for_latest_hash():
     hashes = get_latest_hashes()
-    print(hashes)
-    builds = get_open_prs(False)
-    for b in builds:
+    for b in get_new_open_pr_builds(False):
         if b["hash"] in hashes:
             return [b]
     return []
@@ -88,38 +85,43 @@ def clone_and_build(build):
     return "zstd-{sha}/zstd".format(sha=build["hash"])
 
 
-def bench(executable, level, filename):
-    tmp = subprocess.run(
-        [executable, "-qb{}".format(level), filename], stderr=subprocess.PIPE
-    ).stderr.decode("utf-8").split(" ")
+def benchmark_single(executable, level, filename):
+    tmp = (
+        subprocess.run(
+            [executable, "-qb{}".format(level), filename], stderr=subprocess.PIPE
+        )
+        .stderr.decode("utf-8")
+        .split(" ")
+    )
     idx = [i for i, d in enumerate(tmp) if d == "MB/s"]
     return [float(tmp[idx[0] - 1]), float(tmp[idx[1] - 1])]
 
 
-def bench_n(executable, level, filename, n=N_BENCHMARK_ITERATIONS):
-    speeds_arr = [bench(executable, level, filename) for _ in range(n)]
-    speeds = (max(b[0] for b in speeds_arr), max(b[1] for b in speeds_arr))
+def benchmark_n(executable, level, filename, n):
+    speeds_arr = [benchmark_single(executable, level, filename) for _ in range(n)]
+    cspeed, dspeed = max(b[0] for b in speeds_arr), max(b[1] for b in speeds_arr)
     print(
         "Bench (executable={} level={} filename={}, iterations={}):\n\t[cspeed: {} MB/s, dspeed: {} MB/s]".format(
             os.path.basename(executable),
             level,
             os.path.basename(filename),
             n,
-            speeds[0],
-            speeds[1],
+            cspeed,
+            dspeed,
         )
     )
-    return speeds
+    return (cspeed, dspeed)
 
 
-def bench_cycle(build, filenames, levels):
-    executable = clone_and_build(build)
-    return [[bench_n(executable, l, f) for f in filenames] for l in levels]
+def benchmark(build, filenames, levels, iterations):
+    return [
+        [benchmark_n(clone_and_build(build), l, f, iterations) for f in filenames] for l in levels
+    ]
 
 
-def compare_versions(baseline_build, test_build, filenames, levels):
-    old = bench_cycle(baseline_build, filenames, levels)
-    new = bench_cycle(test_build, filenames, levels)
+def get_regressions(baseline_build, test_build, iterations, filenames, levels):
+    old = benchmark(baseline_build, filenames, levels, iterations)
+    new = benchmark(test_build, filenames, levels, iterations)
     regressions = []
     for j, level in enumerate(levels):
         for k, filename in enumerate(filenames):
@@ -160,43 +162,56 @@ def compare_versions(baseline_build, test_build, filenames, levels):
     return regressions
 
 
-def benchmark(filenames, levels, emails, builds=None):
-    builds = get_open_prs() if builds == None else builds
-    for test_build in builds:
-        regressions = compare_versions(MASTER_BUILD, test_build, filenames, levels)
-        body = "\n".join(regressions)
-        if len(regressions) > 0:
-            if emails != None:
-                os.system(
-                    """
-                    echo "{}" | mutt -s "[zstd regression] caused by new pr" {}
-                """.format(
-                        body, emails
+def main(filenames, levels, iterations, builds=None, emails=None, continuous=False):
+    if builds == None:
+        builds = get_new_open_pr_builds()
+    while True:
+        for test_build in builds:
+            regressions = get_regressions(MASTER_BUILD, test_build, iterations, filenames, levels)
+            body = "\n".join(regressions)
+            if len(regressions) > 0:
+                if emails != None:
+                    os.system(
+                        """
+                        echo "{}" | mutt -s "[zstd regression] caused by new pr" {}
+                    """.format(
+                            body, emails
+                        )
                     )
-                )
-            print(body)
+                    print("Emails sent to {}".format(emails))
+                print(body)
+        if not continuous:
+            break
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "directory", help="Directory with files to benchmark", default="fuzz"
+        "directory", help="directory with files to benchmark", default="fuzz"
+    )
+    parser.add_argument("levels", help="levels to test eg ('1,2,3')", default="1,2,3")
+    parser.add_argument(
+        "mode", help="0: regular, 1: pull request ci, 2: continuous", default="0"
     )
     parser.add_argument(
-        "levels", help="Which levels to test eg ('1,2,3')", default="1,2,3"
-    )
-    parser.add_argument(
-        "mode", help="0 for pr run, 1 for benchmark machine run", default="0"
+        "iterations", help="number of benchmark iterations to run", default=5
     )
     parser.add_argument(
         "emails",
-        help="Email addresses of people who will be alerted upon regression",
+        help="email addresses of people who will be alerted upon regression. Only for mode 2",
         default=None,
     )
+
     args = parser.parse_args()
     filenames = glob.glob("{}/**".format(args.directory))
-    emails = args.emails
-    mode = args.mode
     levels = [int(l) for l in args.levels.split(",")]
-    builds = get_build_for_latest_hash() if mode == "0" else None
-    benchmark(filenames, levels, emails, builds)
+    mode = args.mode
+    iterations = args.iterations
+    emails = args.emails
+
+    if mode == "0":
+        main(filenames, levels, iterations)
+    elif mode == "1":
+        main(filenames, levels, iterations, get_builds_for_latest_hash())
+    else:
+        main(filenames, levels, iterations, None, emails, True)
