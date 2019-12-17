@@ -4,6 +4,7 @@ import os
 import pickle as pk
 import urllib.request
 import json
+import subprocess
 
 
 GITHUB_API_PR_URL = "https://api.github.com/repos/bimbashrestha/zstd/pulls?state=open"
@@ -50,6 +51,8 @@ def convert_to_full_hash(short):
     return sha
 
 def get_latest_hashes():
+    res = subprocess.run(['git', 'log', '-1'], stdout=subprocess.PIPE)
+    print("res:", res)
     os.system("git log -1 &> tmp")
     with open("tmp", "r") as f:
         tmp = f.read()
