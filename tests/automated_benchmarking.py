@@ -52,6 +52,7 @@ def get_build_for_latest_hash():
     latest_hash = get_latest_hash()
     builds = get_open_prs(False)
     for b in builds:
+        print(b["hash"], b["branch"], latest_hash)
         if b["hash"] == latest_hash:
             return [b]
     return []
@@ -59,7 +60,6 @@ def get_build_for_latest_hash():
 
 def clone_and_build(build):
     github_url = "https://github.com/{}/zstd".format(build["user"])
-    print("clone_and_build({})".format(github_url))
     os.system(
         """
         rm -rf zstd-{sha} &&
@@ -80,9 +80,7 @@ def clone_and_build(build):
 
 
 def bench(executable, level, filename):
-    cmd = "{} -qb{} {} &> tmp".format(executable, level, filename)
-    print(cmd)
-    os.system(cmd)
+    os.system("{} -qb{} {} &> tmp".format(executable, level, filename))
     with open("tmp", "r") as f:
         output = f.read().split(" ")
         idx = [i for i, d in enumerate(output) if d == "MB/s"]
