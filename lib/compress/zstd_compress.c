@@ -2452,6 +2452,7 @@ out:
 
 static void ZSTD_confirmRepcodesAndEntropyTables(ZSTD_CCtx* zc)
 {
+    DEBUGLOG(5, "ZSTD_confirmRepcodesAndEntropyTables()");
     ZSTD_compressedBlockState_t* const tmp = zc->blockState.prevCBlock;
     zc->blockState.prevCBlock = zc->blockState.nextCBlock;
     zc->blockState.nextCBlock = tmp;
@@ -2477,8 +2478,9 @@ static size_t ZSTD_compressBlock_targetCBlockSize_body(ZSTD_CCtx* zc,
      * and return early if that is successful and we have enough room for checksum */
     {
         size_t const cSize = ZSTD_noCompressSuperBlock(dst, dstCapacity, src, srcSize, zc->appliedParams.targetCBlockSize, lastBlock);
-        if (cSize != ERROR(dstSize_tooSmall) && (dstCapacity - cSize) >= 4)
+        if (cSize != ERROR(dstSize_tooSmall) && (dstCapacity - cSize) >= 4) {
             return cSize;
+        }
     }
     DEBUGLOG(5, "ZSTD_noCompressSuperBlock() failed. Attempting ZSTD_compressSequences()");
 
@@ -2565,7 +2567,7 @@ static size_t ZSTD_compress_frameChunk (ZSTD_CCtx* cctx,
     BYTE* const ostart = (BYTE*)dst;
     BYTE* op = ostart;
     U32 const maxDist = (U32)1 << cctx->appliedParams.cParams.windowLog;
-    const int targetCBlockSize = cctx->appliedParams.targetCBlockSize;
+    const size_t targetCBlockSize = cctx->appliedParams.targetCBlockSize;
 
     /* This bool is set if there is enough room to output all noCompress superblocks.
      * Just checks if the number of compressed blocks we can fit in dstCapacity is
