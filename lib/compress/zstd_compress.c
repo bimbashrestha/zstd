@@ -2471,6 +2471,7 @@ static size_t ZSTD_compressBlock_targetCBlockSize_body(ZSTD_CCtx* zc,
             return cSize;
         }
     }
+    DEBUGLOG(5, "ZSTD_compressSuperBlock() failed. Attempting ZSTD_noCompressSuperBlock()");
 
     /* Superblock compression failed, attempt to emit noCompress superblocks
      * and return early if that is successful and we have enough room for checksum */
@@ -2479,6 +2480,7 @@ static size_t ZSTD_compressBlock_targetCBlockSize_body(ZSTD_CCtx* zc,
         if (cSize != ERROR(dstSize_tooSmall) && (dstCapacity - cSize) >= 4)
             return cSize;
     }
+    DEBUGLOG(5, "ZSTD_noCompressSuperBlock() failed. Attempting ZSTD_compressSequences()");
 
     /* noCompress superblock emission failed. Attempt to compress normally
      * and return early if that is successful */
@@ -2495,6 +2497,7 @@ static size_t ZSTD_compressBlock_targetCBlockSize_body(ZSTD_CCtx* zc,
             return cSize + ZSTD_blockHeaderSize;
         }
     }
+    DEBUGLOG(5, "ZSTD_compressSequences() failed. Resorting to ZSTD_noCompressBlock()");
 
     /* Everything failed. Just emit a regular noCompress block */
     return ZSTD_noCompressBlock(dst, dstCapacity, src, srcSize, lastBlock);
