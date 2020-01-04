@@ -620,7 +620,7 @@ int main(int const argCount, const char* argv[])
 
     /* init */
     (void)recursive; (void)cLevelLast;    /* not used when ZSTD_NOBENCH set */
-    (void)memLimit;   /* not used when ZSTD_NODECOMPRESS set */
+    (void)memLimit;
     assert(argCount >= 1);
     if ((filenames==NULL) || (file_of_names==NULL)) { DISPLAY("zstd: allocation error \n"); exit(1); }
     programName = lastNameFromPath(programName);
@@ -872,7 +872,7 @@ int main(int const argCount, const char* argv[])
                     /* destination file name */
                 case 'o': nextArgumentIsOutFileName=1; lastCommand=1; argument++; break;
 
-                    /* limit decompression memory */
+                    /* limit memory */
                 case 'M':
                     argument++;
                     memLimit = readU32FromChar(&argument);
@@ -1203,6 +1203,7 @@ int main(int const argCount, const char* argv[])
         FIO_setTargetCBlockSize(prefs, targetCBlockSize);
         FIO_setSrcSizeHint(prefs, srcSizeHint);
         FIO_setLiteralCompressionMode(prefs, literalCompressionMode);
+        FIO_setMemLimit(prefs, memLimit);
         if (adaptMin > cLevel) cLevel = adaptMin;
         if (adaptMax < cLevel) cLevel = adaptMax;
 
