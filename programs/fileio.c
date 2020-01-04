@@ -321,6 +321,7 @@ struct FIO_prefs_s {
     int nbWorkers;
 
     int excludeCompressedFiles;
+    int diffFromMode;
 };
 
 
@@ -487,6 +488,10 @@ void FIO_setLdmHashRateLog(FIO_prefs_t* const prefs, int ldmHashRateLog) {
     prefs->ldmHashRateLog = ldmHashRateLog;
 }
 
+void FIO_setDiffFromMode(FIO_prefs_t* const prefs, int diffFromMode)
+{
+    prefs->diffFromMode = diffFromMode;
+}
 
 /*-*************************************
 *  Functions

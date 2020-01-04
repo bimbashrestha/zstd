@@ -1184,6 +1184,7 @@ int main(int const argCount, const char* argv[])
 
     /* IO Stream/File */
     FIO_setNotificationLevel(g_displayLevel);
+    FIO_setDiffFromMode(prefs, diffFromDictFileName != NULL);
     if (operation==zom_compress) {
 #ifndef ZSTD_NOCOMPRESS
         FIO_setNbWorkers(prefs, nbWorkers);
