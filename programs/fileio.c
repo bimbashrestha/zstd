@@ -768,8 +768,6 @@ typedef struct {
     ZSTD_CStream* cctx;
 } cRess_t;
 
-#define MAX(x, y) (((x) > (y)) ? (x) : (y))
-
 static unsigned int FIO_log2(const size_t x)
 {
     size_t tmp = x; int res = 0;
@@ -778,7 +776,7 @@ static unsigned int FIO_log2(const size_t x)
 }
 
 static cRess_t FIO_createCResources(FIO_prefs_t* const prefs,
-                                    const char* dictFileName, const char* srcFileName,
+                                    const char* dictFileName, const size_t maxSrcFileSize,
                                     int cLevel, ZSTD_compressionParameters comprParams) {
     cRess_t ress;
     memset(&ress, 0, sizeof(ress));
@@ -806,8 +804,7 @@ static cRess_t FIO_createCResources(FIO_prefs_t* const prefs,
             comprParams.windowLog = ADAPT_WINDOWLOG_DEFAULT;
 
         if (prefs->diffFromMode) {
-            size_t targetWindowSize = (size_t)UTIL_getFileSize(srcFileName) + DIFFFROM_WINDOWSIZE_EXTRA_BYTES;
-            comprParams.windowLog = FIO_log2(targetWindowSize);
+            comprParams.windowLog = FIO_log2(maxSrcFileSize + DIFFFROM_WINDOWSIZE_EXTRA_BYTES);
         }
 
         CHECK( ZSTD_CCtx_setParameter(ress.cctx, ZSTD_c_contentSizeFlag, 1) );  /* always enable content size when available (note: supposed to be default) */
@@ -1538,7 +1535,7 @@ int FIO_compressFilename(FIO_prefs_t* const prefs, const char* dstFileName,
                          const char* srcFileName, const char* dictFileName,
                          int compressionLevel,  ZSTD_compressionParameters comprParams)
 {
-    cRess_t const ress = FIO_createCResources(prefs, dictFileName, srcFileName, compressionLevel, comprParams);
+    cRess_t const ress = FIO_createCResources(prefs, dictFileName, (size_t)UTIL_getFileSize(srcFileName), compressionLevel, comprParams);
     int const result = FIO_compressFilename_srcFile(prefs, ress, dstFileName, srcFileName, compressionLevel);
 
 
@@ -1586,17 +1583,14 @@ FIO_determineCompressedName(const char* srcFileName, const char* outDirName, con
     return dstFileNameBuffer;
 }
 
-static size_t FIO_indexOfFileNameWithLargestSize(const char** inFileNames, unsigned nbFiles)
+static size_t FIO_getLargestFileSize(const char** inFileNames, unsigned nbFiles)
 {
-    size_t index = 0; size_t maxFileSize = 0; size_t fileSize; size_t i;
+    size_t i; size_t fileSize; size_t maxFileSize = 0;
     for (i = 0; i < nbFiles; i++) {
-        fileSize = (size_t)UTIL_getFileSize(inFileNames[i]);
-        if (fileSize > maxFileSize) {
-            maxFileSize = fileSize;
-            index = i;
-        }
+        fileSize = UTIL_getFileSize(inFileNames[i]);
+        maxFileSize = fileSize > maxFileSize ? fileSize : maxFileSize;
     }
-    return index;
+    return maxFileSize;
 }
 
 /* FIO_compressMultipleFilenames() :
@@ -1614,7 +1608,7 @@ int FIO_compressMultipleFilenames(FIO_prefs_t* const prefs,
 {
     int error = 0;
     cRess_t ress = FIO_createCResources(prefs, dictFileName,
-        inFileNamesTable[FIO_indexOfFileNameWithLargestSize(inFileNamesTable, nbFiles)],
+        FIO_getLargestFileSize(inFileNamesTable, nbFiles),
         compressionLevel, comprParams);
 
     /* init */

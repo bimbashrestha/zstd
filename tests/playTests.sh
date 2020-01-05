@@ -1204,11 +1204,10 @@ fi
 
 println "\n===> diff-from tests"
 
-println "small files"
 ./datagen -g1000 -P50 > tmp_dict
 ./datagen -g1000 -P10 > tmp_patch
-$ZSTD --diff-from=tmp_dict tmp_patch -o tmp_patch_diff
-$ZSTD -d --diff-from=tmp_dict tmp_patch_diff -o tmp_patch_recon
+$ZSTD --memory=10000 --diff-from=tmp_dict tmp_patch -o tmp_patch_diff
+$ZSTD -d --memory=10000 --diff-from=tmp_dict tmp_patch_diff -o tmp_patch_recon
 $DIFF -s tmp_patch_recon tmp_patch
 rm -rf tmp_*
 

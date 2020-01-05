@@ -1185,11 +1185,18 @@ int main(int const argCount, const char* argv[])
     /* IO Stream/File */
     FIO_setNotificationLevel(g_displayLevel);
     FIO_setDiffFromMode(prefs, diffFromDictFileName != NULL);
+    if (diffFromDictFileName != NULL) {
+        dictFileName = diffFromDictFileName;
+    }
+    if (memLimit == 0) {
+        if (compressionParams.windowLog == 0) {
+            memLimit = (U32)1 << g_defaultMaxWindowLog;
+        } else {
+            memLimit = (U32)1 << (compressionParams.windowLog & 31);
+    }   }
+    FIO_setMemLimit(prefs, memLimit);
     if (operation==zom_compress) {
 #ifndef ZSTD_NOCOMPRESS
-        if (memLimit == 0) {
-            memLimit = 128 MB;
-        }
         FIO_setNbWorkers(prefs, nbWorkers);
         FIO_setBlockSize(prefs, (int)blockSize);
         if (g_overlapLog!=OVERLAP_LOG_DEFAULT) FIO_setOverlapLog(prefs, (int)g_overlapLog);
@@ -1206,35 +1213,23 @@ int main(int const argCount, const char* argv[])
         FIO_setTargetCBlockSize(prefs, targetCBlockSize);
         FIO_setSrcSizeHint(prefs, srcSizeHint);
         FIO_setLiteralCompressionMode(prefs, literalCompressionMode);
-        FIO_setMemLimit(prefs, memLimit);
         if (adaptMin > cLevel) cLevel = adaptMin;
         if (adaptMax < cLevel) cLevel = adaptMax;
 
         if ((filenames->tableSize==1) && outFileName)
-          operationResult = FIO_compressFilename(prefs, outFileName, filenames->fileNames[0],
-            diffFromDictFileName ? diffFromDictFileName : dictFileName, cLevel, compressionParams);
+          operationResult = FIO_compressFilename(prefs, outFileName, filenames->fileNames[0], dictFileName, cLevel, compressionParams);
         else
-          operationResult = FIO_compressMultipleFilenames(prefs, filenames->fileNames, (unsigned)filenames->tableSize, outDirName, outFileName, suffix,
-            diffFromDictFileName ? diffFromDictFileName : dictFileName, cLevel, compressionParams);
+          operationResult = FIO_compressMultipleFilenames(prefs, filenames->fileNames, (unsigned)filenames->tableSize, outDirName, outFileName, suffix, dictFileName, cLevel, compressionParams);
 #else
         (void)suffix; (void)adapt; (void)rsyncable; (void)ultra; (void)cLevel; (void)ldmFlag; (void)literalCompressionMode; (void)targetCBlockSize; (void)streamSrcSize; (void)srcSizeHint; /* not used when ZSTD_NOCOMPRESS set */
         DISPLAY("Compression not supported \n");
 #endif
     } else {  /* decompression or test */
 #ifndef ZSTD_NODECOMPRESS
-        if (memLimit == 0) {
-            if (compressionParams.windowLog == 0) {
-                memLimit = (U32)1 << g_defaultMaxWindowLog;
-            } else {
-                memLimit = (U32)1 << (compressionParams.windowLog & 31);
-        }   }
-        FIO_setMemLimit(prefs, memLimit);
         if (filenames->tableSize == 1 && outFileName) {
-            operationResult = FIO_decompressFilename(prefs, outFileName, filenames->fileNames[0],
-                diffFromDictFileName ? diffFromDictFileName : dictFileName);
+            operationResult = FIO_decompressFilename(prefs, outFileName, filenames->fileNames[0], dictFileName);
         } else {
-            operationResult = FIO_decompressMultipleFilenames(prefs, filenames->fileNames, (unsigned)filenames->tableSize, outDirName, outFileName,
-                diffFromDictFileName ? diffFromDictFileName : dictFileName);
+            operationResult = FIO_decompressMultipleFilenames(prefs, filenames->fileNames, (unsigned)filenames->tableSize, outDirName, outFileName, dictFileName);
         }
 #else
         DISPLAY("Decompression not supported \n");
