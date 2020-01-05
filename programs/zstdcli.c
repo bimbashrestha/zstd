@@ -1188,7 +1188,7 @@ int main(int const argCount, const char* argv[])
     if (operation==zom_compress) {
 #ifndef ZSTD_NOCOMPRESS
         if (memLimit == 0) {
-            memLimit = 32 MB;
+            memLimit = 128 MB;
         }
         FIO_setNbWorkers(prefs, nbWorkers);
         FIO_setBlockSize(prefs, (int)blockSize);
