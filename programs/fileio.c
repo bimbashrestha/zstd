@@ -806,7 +806,7 @@ static cRess_t FIO_createCResources(FIO_prefs_t* const prefs,
             comprParams.windowLog = ADAPT_WINDOWLOG_DEFAULT;
 
         if (prefs->diffFromMode) {
-            size_t targetWindowSize = UTIL_getFileSize(srcFileName) + DIFFFROM_WINDOWSIZE_EXTRA_BYTES;
+            size_t targetWindowSize = (size_t)UTIL_getFileSize(srcFileName) + DIFFFROM_WINDOWSIZE_EXTRA_BYTES;
             comprParams.windowLog = FIO_log2(targetWindowSize);
         }
 
@@ -1588,7 +1588,7 @@ FIO_determineCompressedName(const char* srcFileName, const char* outDirName, con
 
 static size_t FIO_indexOfFileNameWithLargestSize(const char** inFileNames, unsigned nbFiles)
 {
-    size_t index = 0; size_t maxFileSize = 0; size_t fileSize; size_t i;
+    size_t index = 0; size_t maxFileSize = 0; U64 fileSize; size_t i;
     for (i = 0; i < nbFiles; i++) {
         fileSize = UTIL_getFileSize(inFileNames[i]);
         if (fileSize > maxFileSize) {
