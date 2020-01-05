@@ -1588,9 +1588,9 @@ FIO_determineCompressedName(const char* srcFileName, const char* outDirName, con
 
 static size_t FIO_indexOfFileNameWithLargestSize(const char** inFileNames, unsigned nbFiles)
 {
-    size_t index = 0; size_t maxFileSize = 0; U64 fileSize; size_t i;
+    size_t index = 0; size_t maxFileSize = 0; size_t fileSize; size_t i;
     for (i = 0; i < nbFiles; i++) {
-        fileSize = UTIL_getFileSize(inFileNames[i]);
+        fileSize = (size_t)UTIL_getFileSize(inFileNames[i]);
         if (fileSize > maxFileSize) {
             maxFileSize = fileSize;
             index = i;
