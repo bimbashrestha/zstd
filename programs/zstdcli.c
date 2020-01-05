@@ -1187,6 +1187,9 @@ int main(int const argCount, const char* argv[])
     FIO_setDiffFromMode(prefs, diffFromDictFileName != NULL);
     if (operation==zom_compress) {
 #ifndef ZSTD_NOCOMPRESS
+        if (memLimit == 0) {
+            memLimit = 32 MB;
+        }
         FIO_setNbWorkers(prefs, nbWorkers);
         FIO_setBlockSize(prefs, (int)blockSize);
         if (g_overlapLog!=OVERLAP_LOG_DEFAULT) FIO_setOverlapLog(prefs, (int)g_overlapLog);

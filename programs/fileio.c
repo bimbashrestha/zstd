@@ -77,6 +77,7 @@
 
 #define FNSPACE 30
 
+#define DIFFFROM_WINDOWSIZE_EXTRA_BYTES 1 KB
 
 /*-*************************************
 *  Macros
@@ -629,7 +630,7 @@ FIO_openDstFile(FIO_prefs_t* const prefs,
  * @return : loaded size
  *  if fileName==NULL, returns 0 and a NULL pointer
  */
-static size_t FIO_createDictBuffer(void** bufferPtr, const char* fileName)
+static size_t FIO_createDictBuffer(FIO_prefs_t* const prefs, void** bufferPtr, const char* fileName)
 {
     FILE* fileHandle;
     U64 fileSize;
@@ -643,9 +644,12 @@ static size_t FIO_createDictBuffer(void** bufferPtr, const char* fileName)
     if (fileHandle==NULL) EXM_THROW(31, "%s: %s", fileName, strerror(errno));
 
     fileSize = UTIL_getFileSize(fileName);
-    if (fileSize > DICTSIZE_MAX) {
-        EXM_THROW(32, "Dictionary file %s is too large (> %u MB)",
-                        fileName, DICTSIZE_MAX >> 20);   /* avoid extreme cases */
+    {
+        size_t dictSizeMax = prefs->diffFromMode ? prefs->memLimit : DICTSIZE_MAX;
+        if (fileSize >  dictSizeMax) {
+            EXM_THROW(32, "Dictionary file %s is too large (> %u bytes)",
+                            fileName,  (unsigned)dictSizeMax);   /* avoid extreme cases */
+        }
     }
     *bufferPtr = malloc((size_t)fileSize);
     if (*bufferPtr==NULL) EXM_THROW(34, "%s", strerror(errno));
@@ -764,9 +768,18 @@ typedef struct {
     ZSTD_CStream* cctx;
 } cRess_t;
 
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+
+static size_t FIO_log2(const size_t x)
+{
+    size_t tmp = x; size_t res = 0;
+    while (tmp >>= 1) res++;
+    return res;
+}
+
 static cRess_t FIO_createCResources(FIO_prefs_t* const prefs,
-                                    const char* dictFileName, int cLevel,
-                                    ZSTD_compressionParameters comprParams) {
+                                    const char* dictFileName, const char* srcFileName,
+                                    int cLevel, ZSTD_compressionParameters comprParams) {
     cRess_t ress;
     memset(&ress, 0, sizeof(ress));
 
@@ -784,13 +797,18 @@ static cRess_t FIO_createCResources(FIO_prefs_t* const prefs,
 
     /* Advanced parameters, including dictionary */
     {   void* dictBuffer;
-        size_t const dictBuffSize = FIO_createDictBuffer(&dictBuffer, dictFileName);   /* works with dictFileName==NULL */
+        size_t const dictBuffSize = FIO_createDictBuffer(prefs, &dictBuffer, dictFileName);   /* works with dictFileName==NULL */
         if (dictFileName && (dictBuffer==NULL))
             EXM_THROW(32, "allocation error : can't create dictBuffer");
         ress.dictFileName = dictFileName;
 
         if (prefs->adaptiveMode && !prefs->ldmFlag && !comprParams.windowLog)
             comprParams.windowLog = ADAPT_WINDOWLOG_DEFAULT;
+
+        if (prefs->diffFromMode) {
+            size_t targetWindowSize = UTIL_getFileSize(srcFileName) + DIFFFROM_WINDOWSIZE_EXTRA_BYTES;
+            comprParams.windowLog = FIO_log2(targetWindowSize);
+        }
 
         CHECK( ZSTD_CCtx_setParameter(ress.cctx, ZSTD_c_contentSizeFlag, 1) );  /* always enable content size when available (note: supposed to be default) */
         CHECK( ZSTD_CCtx_setParameter(ress.cctx, ZSTD_c_dictIDFlag, prefs->dictIDFlag) );
@@ -1520,7 +1538,7 @@ int FIO_compressFilename(FIO_prefs_t* const prefs, const char* dstFileName,
                          const char* srcFileName, const char* dictFileName,
                          int compressionLevel,  ZSTD_compressionParameters comprParams)
 {
-    cRess_t const ress = FIO_createCResources(prefs, dictFileName, compressionLevel, comprParams);
+    cRess_t const ress = FIO_createCResources(prefs, dictFileName, srcFileName, compressionLevel, comprParams);
     int const result = FIO_compressFilename_srcFile(prefs, ress, dstFileName, srcFileName, compressionLevel);
 
 
@@ -1568,6 +1586,18 @@ FIO_determineCompressedName(const char* srcFileName, const char* outDirName, con
     return dstFileNameBuffer;
 }
 
+static size_t FIO_indexOfFileNameWithLargestSize(const char** inFileNames, unsigned nbFiles)
+{
+    size_t index = 0; size_t maxFileSize = 0; size_t fileSize; size_t i;
+    for (i = 0; i < nbFiles; i++) {
+        fileSize = UTIL_getFileSize(inFileNames[i]);
+        if (fileSize > maxFileSize) {
+            maxFileSize = fileSize;
+            index = i;
+        }
+    }
+    return index;
+}
 
 /* FIO_compressMultipleFilenames() :
  * compress nbFiles files
@@ -1583,7 +1613,9 @@ int FIO_compressMultipleFilenames(FIO_prefs_t* const prefs,
                                   ZSTD_compressionParameters comprParams)
 {
     int error = 0;
-    cRess_t ress = FIO_createCResources(prefs, dictFileName, compressionLevel, comprParams);
+    cRess_t ress = FIO_createCResources(prefs, dictFileName,
+        inFileNamesTable[FIO_indexOfFileNameWithLargestSize(inFileNamesTable, nbFiles)],
+        compressionLevel, comprParams);
 
     /* init */
     assert(outFileName != NULL || suffix != NULL);
@@ -1653,7 +1685,7 @@ static dRess_t FIO_createDResources(FIO_prefs_t* const prefs, const char* dictFi
 
     /* dictionary */
     {   void* dictBuffer;
-        size_t const dictBufferSize = FIO_createDictBuffer(&dictBuffer, dictFileName);
+        size_t const dictBufferSize = FIO_createDictBuffer(prefs, &dictBuffer, dictFileName);
         CHECK( ZSTD_initDStream_usingDict(ress.dctx, dictBuffer, dictBufferSize) );
         free(dictBuffer);
     }
