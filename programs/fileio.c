@@ -770,9 +770,9 @@ typedef struct {
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
-static size_t FIO_log2(const size_t x)
+static int FIO_log2(const size_t x)
 {
-    size_t tmp = x; size_t res = 0;
+    size_t tmp = x; int res = 0;
     while (tmp >>= 1) res++;
     return res;
 }
