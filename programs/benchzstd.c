@@ -233,6 +233,7 @@ static size_t local_defaultCompress(
                     void* addArgs)
 {
     ZSTD_CCtx* const cctx = (ZSTD_CCtx*)addArgs;
+    ZSTD_compress2(cctx, dstBuffer, dstSize, srcBuffer, srcSize);
     return ZSTD_compress2(cctx, dstBuffer, dstSize, srcBuffer, srcSize);
 }
 
