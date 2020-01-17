@@ -2782,6 +2782,7 @@ size_t ZSTD_compressBlock(ZSTD_CCtx* cctx, void* dst, size_t dstCapacity, const 
  *  @return : 0, or an error code
  */
 static size_t ZSTD_loadDictionaryContent(ZSTD_matchState_t* ms,
+                                         ldmState_t* ls,
                                          ZSTD_cwksp* ws,
                                          ZSTD_CCtx_params const* params,
                                          const void* src, size_t srcSize,
@@ -2804,6 +2805,11 @@ static size_t ZSTD_loadDictionaryContent(ZSTD_matchState_t* ms,
         const BYTE* const ichunk = ip + chunk;
 
         ZSTD_overflowCorrectIfNeeded(ms, ws, params, ip, ichunk);
+
+        if (params->ldmParams.enableLdm) {
+            ZSTD_ldm_fillHashTable(ls, ichunk-HASH_READ_SIZE, ls->window.base, &params->ldmParams);
+            break;
+        }
 
         switch(params->cParams.strategy)
         {
@@ -2983,7 +2989,7 @@ static size_t ZSTD_loadZstdDictionary(ZSTD_compressedBlockState_t* bs,
         bs->entropy.fse.matchlength_repeatMode = FSE_repeat_valid;
         bs->entropy.fse.litlength_repeatMode = FSE_repeat_valid;
         FORWARD_IF_ERROR(ZSTD_loadDictionaryContent(
-            ms, ws, params, dictPtr, dictContentSize, dtlm));
+            ms, NULL, ws, params, dictPtr, dictContentSize, dtlm));
         return dictID;
     }
 }
@@ -2993,6 +2999,7 @@ static size_t ZSTD_loadZstdDictionary(ZSTD_compressedBlockState_t* bs,
 static size_t
 ZSTD_compress_insertDictionary(ZSTD_compressedBlockState_t* bs,
                                ZSTD_matchState_t* ms,
+                               ldmState_t* ls,
                                ZSTD_cwksp* ws,
                          const ZSTD_CCtx_params* params,
                          const void* dict, size_t dictSize,
@@ -3010,13 +3017,13 @@ ZSTD_compress_insertDictionary(ZSTD_compressedBlockState_t* bs,
 
     /* dict restricted modes */
     if (dictContentType == ZSTD_dct_rawContent)
-        return ZSTD_loadDictionaryContent(ms, ws, params, dict, dictSize, dtlm);
+        return ZSTD_loadDictionaryContent(ms, ls, ws, params, dict, dictSize, dtlm);
 
     if (MEM_readLE32(dict) != ZSTD_MAGIC_DICTIONARY) {
         if (dictContentType == ZSTD_dct_auto) {
             DEBUGLOG(4, "raw content dictionary detected");
             return ZSTD_loadDictionaryContent(
-                ms, ws, params, dict, dictSize, dtlm);
+                ms, ls, ws, params, dict, dictSize, dtlm);
         }
         RETURN_ERROR_IF(dictContentType == ZSTD_dct_fullDict, dictionary_wrong);
         assert(0);   /* impossible */
@@ -3058,11 +3065,11 @@ static size_t ZSTD_compressBegin_internal(ZSTD_CCtx* cctx,
                                      ZSTDcrp_makeClean, zbuff) );
     {   size_t const dictID = cdict ?
                 ZSTD_compress_insertDictionary(
-                        cctx->blockState.prevCBlock, &cctx->blockState.matchState,
+                        cctx->blockState.prevCBlock, &cctx->blockState.matchState, &cctx->ldmState,
                         &cctx->workspace, params, cdict->dictContent, cdict->dictContentSize,
                         dictContentType, dtlm, cctx->entropyWorkspace)
               : ZSTD_compress_insertDictionary(
-                        cctx->blockState.prevCBlock, &cctx->blockState.matchState,
+                        cctx->blockState.prevCBlock, &cctx->blockState.matchState, &cctx->ldmState,
                         &cctx->workspace, params, dict, dictSize,
                         dictContentType, dtlm, cctx->entropyWorkspace);
         FORWARD_IF_ERROR(dictID);
@@ -3341,7 +3348,7 @@ static size_t ZSTD_initCDict_internal(
         params.fParams.contentSizeFlag = 1;
         params.cParams = cParams;
         {   size_t const dictID = ZSTD_compress_insertDictionary(
-                    &cdict->cBlockState, &cdict->matchState, &cdict->workspace,
+                    &cdict->cBlockState, &cdict->matchState, NULL, &cdict->workspace,
                     &params, cdict->dictContent, cdict->dictContentSize,
                     dictContentType, ZSTD_dtlm_full, cdict->entropyWorkspace);
             FORWARD_IF_ERROR(dictID);

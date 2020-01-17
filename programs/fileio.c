@@ -854,7 +854,11 @@ static cRess_t FIO_createCResources(FIO_prefs_t* const prefs,
         CHECK( ZSTD_CCtx_setParameter(ress.cctx, ZSTD_c_rsyncable, prefs->rsyncable) );
 #endif
         /* dictionary */
-        CHECK( ZSTD_CCtx_loadDictionary(ress.cctx, dictBuffer, dictBuffSize) );
+        if (!prefs->patchFromMode) {
+            CHECK( ZSTD_CCtx_loadDictionary(ress.cctx, dictBuffer, dictBuffSize) );
+        } else {
+            CHECK( ZSTD_CCtx_refPrefix(ress.cctx, dictBuffer, dictBuffSize) );
+        }
         free(dictBuffer);
     }
 
