@@ -862,12 +862,13 @@ static cRess_t FIO_createCResources(FIO_prefs_t* const prefs,
         CHECK( ZSTD_CCtx_setParameter(ress.cctx, ZSTD_c_rsyncable, prefs->rsyncable) );
 #endif
         /* dictionary */
-        if (!prefs->patchFromMode) {
-            CHECK( ZSTD_CCtx_loadDictionary(ress.cctx, dictBuffer, dictBuffSize) );
-        } else {
+        if (prefs->patchFromMode) {
+            /* Need to keep this buffer around till compression finishes */
             CHECK( ZSTD_CCtx_refPrefix(ress.cctx, dictBuffer, dictBuffSize) );
+        } else {
+            CHECK( ZSTD_CCtx_loadDictionary(ress.cctx, dictBuffer, dictBuffSize) );
+            free(dictBuffer);
         }
-        free(dictBuffer);
     }
 
     return ress;
@@ -1558,6 +1559,8 @@ int FIO_compressFilename(FIO_prefs_t* const prefs, const char* dstFileName,
     int const result = FIO_compressFilename_srcFile(prefs, ress, dstFileName, srcFileName, compressionLevel);
 
 
+    /* Freeing dictBuffer created FIO_createCResources using refPrefix() */
+    if (prefs->patchFromMode) free(ress.cctx->prefixDict.dict);
     FIO_freeCResources(ress);
     return result;
 }
@@ -1656,6 +1659,8 @@ int FIO_compressMultipleFilenames(FIO_prefs_t* const prefs,
             FIO_checkFilenameCollisions(inFileNamesTable ,nbFiles);
     }
 
+    /* Freeing dictBuffer created FIO_createCResources using refPrefix() */
+    if (prefs->patchFromMode) free(ress.cctx->prefixDict.dict);
     FIO_freeCResources(ress);
     return error;
 }
