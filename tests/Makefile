@@ -237,6 +237,9 @@ poolTests : $(PRGDIR)/util.c $(PRGDIR)/timefn.c poolTests.c $(ZSTDDIR)/common/po
 versionsTest: clean
 	$(PYTHON) test-zstd-versions.py
 
+automated_benchmarking: clean
+	$(PYTHON) automated_benchmarking.py golden-compression 1 current 1 "" 60
+
 checkTag: checkTag.c $(ZSTDDIR)/zstd.h
 	$(CC) $(FLAGS) $< -o $@$(EXT)
 
@@ -330,7 +333,7 @@ test-zstd-nolegacy: zstd-nolegacy
 
 test-zstd test-zstd32 test-zstd-nolegacy: datagen
 	file $(ZSTD)
-	EXE_PREFIX="$(QEMU_SYS)" ZSTD_BIN="$(ZSTD)" ./playTests.sh $(ZSTDRTTEST)
+	EXE_PREFIX="$(QEMU_SYS)" ZSTD_BIN="$(ZSTD)" DATAGEN_BIN=./datagen ./playTests.sh $(ZSTDRTTEST)
 
 
 test-gzstd: gzstd

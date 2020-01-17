@@ -80,6 +80,13 @@ shortest:
 .PHONY: check
 check: shortest
 
+.PHONY: automated_benchmarking
+automated_benchmarking:
+	$(MAKE) -C $(TESTDIR) $@
+
+.PHONY: benchmarking
+benchmarking: automated_benchmarking
+
 ## examples: build all examples in `/examples` directory
 .PHONY: examples
 examples: lib
@@ -337,7 +344,7 @@ endif
 
 ifneq (,$(filter MSYS%,$(shell uname)))
 HOST_OS = MSYS
-CMAKE_PARAMS = -G"MSYS Makefiles" -DZSTD_MULTITHREAD_SUPPORT:BOOL=OFF -DZSTD_BUILD_STATIC:BOOL=ON -DZSTD_BUILD_TESTS:BOOL=ON
+CMAKE_PARAMS = -G"MSYS Makefiles" -DCMAKE_BUILD_TYPE=Debug -DZSTD_MULTITHREAD_SUPPORT:BOOL=OFF -DZSTD_BUILD_STATIC:BOOL=ON -DZSTD_BUILD_TESTS:BOOL=ON
 endif
 
 
@@ -349,7 +356,11 @@ cmakebuild:
 	cmake --version
 	$(RM) -r $(BUILDIR)/cmake/build
 	mkdir $(BUILDIR)/cmake/build
-	cd $(BUILDIR)/cmake/build ; cmake -DCMAKE_INSTALL_PREFIX:PATH=~/install_test_dir $(CMAKE_PARAMS) .. ; $(MAKE) install ; $(MAKE) uninstall
+	cd $(BUILDIR)/cmake/build; cmake -DCMAKE_INSTALL_PREFIX:PATH=~/install_test_dir $(CMAKE_PARAMS) ..
+	$(MAKE) -C $(BUILDIR)/cmake/build -j4;
+	$(MAKE) -C $(BUILDIR)/cmake/build install;
+	$(MAKE) -C $(BUILDIR)/cmake/build uninstall;
+	cd $(BUILDIR)/cmake/build; ctest -V
 
 c89build: clean
 	$(CC) -v
