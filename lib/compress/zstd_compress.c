@@ -2806,7 +2806,7 @@ static size_t ZSTD_loadDictionaryContent(ZSTD_matchState_t* ms,
 
         ZSTD_overflowCorrectIfNeeded(ms, ws, params, ip, ichunk);
 
-        if (params->ldmParams.enableLdm) {
+        if (params->ldmParams.enableLdm && ls != NULL) {
             ZSTD_ldm_fillHashTable(ls, ichunk-HASH_READ_SIZE, ls->window.base, &params->ldmParams);
             break;
         }
