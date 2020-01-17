@@ -223,6 +223,17 @@ static U64 ZSTD_ldm_fillLdmHashTable(ldmState_t* state,
     return rollingHash;
 }
 
+void ZSTD_ldm_fillHashTable(
+            ldmState_t* state, const BYTE* ip,
+            const BYTE* iend, ldmParams_t const* params)
+{
+    U64 startingHash = ZSTD_rollingHash_compute(ip, params->minMatchLength);
+    ZSTD_ldm_fillLdmHashTable(
+        state, startingHash, ip, iend, state->window.base,
+        params->hashLog - params->bucketSizeLog,
+        *params);
+}
+
 
 /** ZSTD_ldm_limitTableUpdate() :
  *

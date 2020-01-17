@@ -623,6 +623,7 @@ FIO_openDstFile(FIO_prefs_t* const prefs,
     }
 }
 
+static const unsigned g_defaultMaxWindowLog = 27;
 
 /*! FIO_createDictBuffer() :
  *  creates a buffer, pointed by `*bufferPtr`,
@@ -649,6 +650,13 @@ static size_t FIO_createDictBuffer(void** bufferPtr, const char* fileName, FIO_p
         if (fileSize >  dictSizeMax) {
             EXM_THROW(32, "Dictionary file %s is too large (> %u bytes)",
                             fileName,  (unsigned)dictSizeMax);   /* avoid extreme cases */
+        }
+        if (prefs->patchFromMode &&
+          fileSize > (size_t)(1 << g_defaultMaxWindowLog) &&
+          !prefs->ldmFlag) {
+            EXM_THROW(32,
+                "Dictionary file %s (%u bytes) is too large to use without --long\n",
+                fileName, (unsigned)fileSize);
         }
     }
     *bufferPtr = malloc((size_t)fileSize);
@@ -784,7 +792,8 @@ typedef struct {
 
 static cRess_t FIO_createCResources(FIO_prefs_t* const prefs,
                                     const char* dictFileName, const size_t maxSrcFileSize,
-                                    int cLevel, ZSTD_compressionParameters comprParams) {
+                                    int cLevel, ZSTD_compressionParameters comprParams,
+                                    void* dictBuffer, size_t const dictBuffSize) {
     cRess_t ress;
     memset(&ress, 0, sizeof(ress));
 
@@ -801,9 +810,7 @@ static cRess_t FIO_createCResources(FIO_prefs_t* const prefs,
         EXM_THROW(31, "allocation error : not enough memory");
 
     /* Advanced parameters, including dictionary */
-    {   void* dictBuffer;
-        size_t const dictBuffSize = FIO_createDictBuffer(&dictBuffer, dictFileName, prefs);   /* works with dictFileName==NULL */
-        if (dictFileName && (dictBuffer==NULL))
+    {   if (dictFileName && (dictBuffer==NULL))
             EXM_THROW(32, "allocation error : can't create dictBuffer");
         ress.dictFileName = dictFileName;
 
@@ -854,8 +861,11 @@ static cRess_t FIO_createCResources(FIO_prefs_t* const prefs,
         CHECK( ZSTD_CCtx_setParameter(ress.cctx, ZSTD_c_rsyncable, prefs->rsyncable) );
 #endif
         /* dictionary */
-        CHECK( ZSTD_CCtx_loadDictionary(ress.cctx, dictBuffer, dictBuffSize) );
-        free(dictBuffer);
+        if (prefs->patchFromMode) {
+            CHECK( ZSTD_CCtx_refPrefix(ress.cctx, dictBuffer, dictBuffSize) );
+        } else {
+            CHECK( ZSTD_CCtx_loadDictionary(ress.cctx, dictBuffer, dictBuffSize) );
+        }
     }
 
     return ress;
@@ -1542,10 +1552,14 @@ int FIO_compressFilename(FIO_prefs_t* const prefs, const char* dstFileName,
                          const char* srcFileName, const char* dictFileName,
                          int compressionLevel,  ZSTD_compressionParameters comprParams)
 {
-    cRess_t const ress = FIO_createCResources(prefs, dictFileName, (size_t)UTIL_getFileSize(srcFileName), compressionLevel, comprParams);
+    void* dictBuffer;
+    size_t const dictBuffSize = FIO_createDictBuffer(&dictBuffer, dictFileName, prefs);   /* works with dictFileName==NULL */
+    cRess_t const ress = FIO_createCResources(prefs, dictFileName, (size_t)UTIL_getFileSize(srcFileName), compressionLevel, comprParams, dictBuffer, dictBuffSize);
     int const result = FIO_compressFilename_srcFile(prefs, ress, dstFileName, srcFileName, compressionLevel);
 
 
+    /* Need to keep dictBuffer around for patchFromMode (which uses refPrefix()) */
+    if (dictBuffer != NULL) free(dictBuffer);
     FIO_freeCResources(ress);
     return result;
 }
@@ -1614,9 +1628,11 @@ int FIO_compressMultipleFilenames(FIO_prefs_t* const prefs,
                                   ZSTD_compressionParameters comprParams)
 {
     int error = 0;
+    void* dictBuffer;
+    size_t const dictBuffSize = FIO_createDictBuffer(&dictBuffer, dictFileName, prefs);   /* works with dictFileName==NULL */
     cRess_t ress = FIO_createCResources(prefs, dictFileName,
         FIO_getLargestFileSize(inFileNamesTable, nbFiles),
-        compressionLevel, comprParams);
+        compressionLevel, comprParams, dictBuffer, dictBuffSize);
 
     /* init */
     assert(outFileName != NULL || suffix != NULL);
@@ -1644,6 +1660,8 @@ int FIO_compressMultipleFilenames(FIO_prefs_t* const prefs,
             FIO_checkFilenameCollisions(inFileNamesTable ,nbFiles);
     }
 
+    /* Need to keep dictBuffer around for patchFromMode (which uses refPrefix()) */
+    if (dictBuffer != NULL) free(dictBuffer);
     FIO_freeCResources(ress);
     return error;
 }
