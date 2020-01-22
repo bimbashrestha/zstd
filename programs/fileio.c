@@ -323,6 +323,7 @@ struct FIO_prefs_s {
 
     int excludeCompressedFiles;
     int patchFromMode;
+    int compress; /* 1 if compressing, 0 if decompressing */
 };
 
 
@@ -494,6 +495,11 @@ void FIO_setPatchFromMode(FIO_prefs_t* const prefs, int value)
     prefs->patchFromMode = value != 0;
 }
 
+void FIO_setCompress(FIO_prefs_t* const prefs, int value)
+{
+    prefs->compress = value != 0;
+}
+
 /*-*************************************
 *  Functions
 ***************************************/
@@ -651,7 +657,8 @@ static size_t FIO_createDictBuffer(void** bufferPtr, const char* fileName, FIO_p
             EXM_THROW(32, "Dictionary file %s is too large (> %u bytes)",
                             fileName,  (unsigned)dictSizeMax);   /* avoid extreme cases */
         }
-        if (prefs->patchFromMode &&
+        if (prefs->compress &&
+          prefs->patchFromMode &&
           fileSize > (size_t)(1 << g_defaultMaxWindowLog) &&
           !prefs->ldmFlag) {
             EXM_THROW(32,

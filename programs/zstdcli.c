@@ -1200,6 +1200,7 @@ int main(int const argCount, const char* argv[])
             CLEAN_RETURN(1);
         }
 
+        FIO_setCompress(prefs, 1);
         FIO_setNbWorkers(prefs, nbWorkers);
         FIO_setBlockSize(prefs, (int)blockSize);
         if (g_overlapLog!=OVERLAP_LOG_DEFAULT) FIO_setOverlapLog(prefs, (int)g_overlapLog);
@@ -1229,6 +1230,7 @@ int main(int const argCount, const char* argv[])
 #endif
     } else {  /* decompression or test */
 #ifndef ZSTD_NODECOMPRESS
+        FIO_setCompress(prefs, 0);
         if (filenames->tableSize == 1 && outFileName) {
             operationResult = FIO_decompressFilename(prefs, outFileName, filenames->fileNames[0], dictFileName);
         } else {
