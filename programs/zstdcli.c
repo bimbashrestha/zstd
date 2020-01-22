@@ -1175,11 +1175,6 @@ int main(int const argCount, const char* argv[])
         CLEAN_RETURN(1);
     }
 
-    if (patchFromDictFileName != NULL && !singleThread) {
-        DISPLAY("error : must use --patch-from=# in single thread mode (--single-thread)\n");
-        CLEAN_RETURN(1);
-    }
-
     /* No status message in pipe mode (stdin - stdout) or multi-files mode */
     if (!strcmp(filenames->fileNames[0], stdinmark) && outFileName && !strcmp(outFileName,stdoutmark) && (g_displayLevel==2)) g_displayLevel=1;
     if ((filenames->tableSize > 1) & (g_displayLevel==2)) g_displayLevel=1;
@@ -1199,6 +1194,12 @@ int main(int const argCount, const char* argv[])
     FIO_setMemLimit(prefs, memLimit);
     if (operation==zom_compress) {
 #ifndef ZSTD_NOCOMPRESS
+        /* Only need to ensure --single-thread on compression for --patch-from */
+        if (patchFromDictFileName != NULL && !singleThread) {
+            DISPLAY("error : must use --patch-from=# in single thread mode (--single-thread)\n");
+            CLEAN_RETURN(1);
+        }
+
         FIO_setNbWorkers(prefs, nbWorkers);
         FIO_setBlockSize(prefs, (int)blockSize);
         if (g_overlapLog!=OVERLAP_LOG_DEFAULT) FIO_setOverlapLog(prefs, (int)g_overlapLog);
