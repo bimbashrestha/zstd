@@ -797,6 +797,11 @@ typedef struct {
     ZSTD_CStream* cctx;
 } cRess_t;
 
+#define LDM_PARAM_DEFAULT 9999
+#define DEFAULT_PATCHFROM_LDM_HASH_LOG 7
+#define DEFAULT_PATCHFROM_LDM_MIN_MATCH 64
+#define DEFAULT_PATCHFROM_LDM_BUCKSIZE_LOG 3
+
 static cRess_t FIO_createCResources(FIO_prefs_t* const prefs,
                                     const char* dictFileName, const size_t maxSrcFileSize,
                                     int cLevel, ZSTD_compressionParameters comprParams,
@@ -847,6 +852,14 @@ static cRess_t FIO_createCResources(FIO_prefs_t* const prefs,
         if (prefs->ldmHashRateLog != FIO_LDM_PARAM_NOTSET) {
             CHECK( ZSTD_CCtx_setParameter(ress.cctx, ZSTD_c_ldmHashRateLog, prefs->ldmHashRateLog) );
         }
+
+        /* TODO: Need to improve these defaults */
+        if (prefs->patchFromMode && prefs->ldmFlag) {
+            CHECK( ZSTD_CCtx_setParameter(ress.cctx, ZSTD_c_ldmHashLog, prefs->ldmHashLog ? prefs->ldmHashLog : DEFAULT_PATCHFROM_LDM_HASH_LOG) );
+            CHECK( ZSTD_CCtx_setParameter(ress.cctx, ZSTD_c_ldmMinMatch, prefs->ldmMinMatch ? prefs->ldmMinMatch : DEFAULT_PATCHFROM_LDM_MIN_MATCH) );
+            CHECK( ZSTD_CCtx_setParameter(ress.cctx, ZSTD_c_ldmBucketSizeLog, prefs->ldmBucketSizeLog != LDM_PARAM_DEFAULT ? prefs->ldmBucketSizeLog : DEFAULT_PATCHFROM_LDM_BUCKSIZE_LOG) );
+        }
+
         /* compression parameters */
         CHECK( ZSTD_CCtx_setParameter(ress.cctx, ZSTD_c_windowLog, (int)comprParams.windowLog) );
         CHECK( ZSTD_CCtx_setParameter(ress.cctx, ZSTD_c_chainLog, (int)comprParams.chainLog) );
