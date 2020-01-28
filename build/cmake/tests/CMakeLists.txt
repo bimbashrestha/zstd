@@ -53,7 +53,7 @@ add_executable(zstreamtest ${PROGRAMS_DIR}/datagen.c ${PROGRAMS_DIR}/util.c ${PR
 target_link_libraries(zstreamtest libzstd_static)
 
 add_executable(symbols ${TESTS_DIR}/symbols.c)
-target_link_libraries(symbols libzstd_shared)
+target_link_libraries(symbols "-L${CMAKE_INSTALL_PREFIX}" libzstd_shared)
 
 add_test(
     NAME symbolsTest
