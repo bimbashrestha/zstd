@@ -251,6 +251,7 @@
         cd build/cmake;
         CFLAGS='-Werror' cmake -G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Debug -DZSTD_BUILD_TESTS:BOOL=ON .;
         make -j4;
+        make install;
         ctest -V;
       "
     )
