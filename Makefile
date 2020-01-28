@@ -360,7 +360,6 @@ cmakebuild:
 	$(MAKE) -C $(BUILDIR)/cmake/build -j4;
 	$(MAKE) -C $(BUILDIR)/cmake/build install;
 	cd $(BUILDIR)/cmake/build; ctest -V
-	$(MAKE) -C $(BUILDIR)/cmake/build uninstall;
 
 c89build: clean
 	$(CC) -v
