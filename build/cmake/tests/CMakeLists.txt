@@ -52,8 +52,9 @@ target_link_libraries(fuzzer libzstd_static)
 add_executable(zstreamtest ${PROGRAMS_DIR}/datagen.c ${PROGRAMS_DIR}/util.c ${PROGRAMS_DIR}/timefn.c ${TESTS_DIR}/seqgen.c ${TESTS_DIR}/zstreamtest.c)
 target_link_libraries(zstreamtest libzstd_static)
 
+link_directories(${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
 add_executable(symbols ${TESTS_DIR}/symbols.c)
-target_link_libraries(symbols libzstd_shared)
+target_link_libraries(symbols libzstd.so)
 
 add_test(
     NAME symbolsTest
