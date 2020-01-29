@@ -56,9 +56,11 @@ link_directories(${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
 add_executable(symbols ${TESTS_DIR}/symbols.c)
 target_link_libraries(symbols libzstd.so)
 
-add_test(
-    NAME symbolsTest
-    COMMAND ./symbols)
+if (UNIX)
+    add_test(
+        NAME symbolsTest
+        COMMAND ./symbols)
+endif ()
 
 add_test(
     NAME playTests
