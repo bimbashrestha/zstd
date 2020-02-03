@@ -2792,6 +2792,12 @@ static size_t ZSTD_loadDictionaryContent(ZSTD_matchState_t* ms,
     const BYTE* const iend = ip + srcSize;
 
     ZSTD_window_update(&ms->window, src, srcSize);
+
+    if (params->ldmParams.enableLdm) {
+        /* Update window inside ldm state */
+        ZSTD_window_update(&ls->window, src, srcSize);
+    }
+
     ms->loadedDictEnd = params->forceWindow ? 0 : (U32)(iend - ms->window.base);
 
     /* Assert that we the ms params match the params we're being given */
@@ -3065,13 +3071,15 @@ static size_t ZSTD_compressBegin_internal(ZSTD_CCtx* cctx,
                                      ZSTDcrp_makeClean, zbuff) );
     {   size_t const dictID = cdict ?
                 ZSTD_compress_insertDictionary(
-                        cctx->blockState.prevCBlock, &cctx->blockState.matchState, &cctx->ldmState,
-                        &cctx->workspace, params, cdict->dictContent, cdict->dictContentSize,
-                        dictContentType, dtlm, cctx->entropyWorkspace)
+                        cctx->blockState.prevCBlock, &cctx->blockState.matchState,
+                        &cctx->ldmState, &cctx->workspace, &cctx->appliedParams,
+                        cdict->dictContent, cdict->dictContentSize, dictContentType,
+                        dtlm, cctx->entropyWorkspace)
               : ZSTD_compress_insertDictionary(
-                        cctx->blockState.prevCBlock, &cctx->blockState.matchState, &cctx->ldmState,
-                        &cctx->workspace, params, dict, dictSize,
-                        dictContentType, dtlm, cctx->entropyWorkspace);
+                        cctx->blockState.prevCBlock, &cctx->blockState.matchState,
+                        &cctx->ldmState, &cctx->workspace, &cctx->appliedParams,
+                        dict, dictSize, dictContentType,
+                        dtlm, cctx->entropyWorkspace);
         FORWARD_IF_ERROR(dictID);
         assert(dictID <= UINT_MAX);
         cctx->dictID = (U32)dictID;
