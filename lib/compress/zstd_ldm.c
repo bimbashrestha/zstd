@@ -229,7 +229,7 @@ void ZSTD_ldm_fillHashTable(
 {
     U64 startingHash = ZSTD_rollingHash_compute(ip, params->minMatchLength);
     ZSTD_ldm_fillLdmHashTable(
-        state, startingHash, ip, iend, ip,
+        state, startingHash, ip, iend, state->window.base,
         params->hashLog - params->bucketSizeLog,
         *params);
 }
