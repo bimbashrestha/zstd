@@ -493,11 +493,6 @@ void FIO_setPatchFromMode(FIO_prefs_t* const prefs, int value)
     prefs->patchFromMode = value != 0;
 }
 
-void FIO_setCompress(FIO_prefs_t* const prefs, int value)
-{
-    prefs->compress = value != 0;
-}
-
 /*-*************************************
 *  Functions
 ***************************************/
@@ -626,9 +621,7 @@ FIO_openDstFile(FIO_prefs_t* const prefs,
         return f;
     }
 }
-
-static const unsigned g_defaultMaxWindowLog = 27;
-
+\
 /*! FIO_createDictBuffer() :
  *  creates a buffer, pointed by `*bufferPtr`,
  *  loads `filename` content into it, up to DICTSIZE_MAX bytes.
@@ -654,14 +647,6 @@ static size_t FIO_createDictBuffer(void** bufferPtr, const char* fileName, FIO_p
         if (fileSize >  dictSizeMax) {
             EXM_THROW(32, "Dictionary file %s is too large (> %u bytes)",
                             fileName,  (unsigned)dictSizeMax);   /* avoid extreme cases */
-        }
-        if (prefs->compress &&
-          prefs->patchFromMode &&
-          fileSize > (size_t)(1 << g_defaultMaxWindowLog) &&
-          !prefs->ldmFlag) {
-            EXM_THROW(32,
-                "Dictionary file %s (%u bytes) is too large to use without --long\n",
-                fileName, (unsigned)fileSize);
         }
     }
     *bufferPtr = malloc((size_t)fileSize);
