@@ -321,7 +321,6 @@ struct FIO_prefs_s {
 
     int excludeCompressedFiles;
     int patchFromMode;
-    int compress; /* 1 if compressing, 0 if decompressing */
 };
 
 
@@ -621,7 +620,8 @@ FIO_openDstFile(FIO_prefs_t* const prefs,
         return f;
     }
 }
-\
+
+
 /*! FIO_createDictBuffer() :
  *  creates a buffer, pointed by `*bufferPtr`,
  *  loads `filename` content into it, up to DICTSIZE_MAX bytes.
@@ -831,7 +831,6 @@ static cRess_t FIO_createCResources(FIO_prefs_t* const prefs,
         if (prefs->ldmHashRateLog != FIO_LDM_PARAM_NOTSET) {
             CHECK( ZSTD_CCtx_setParameter(ress.cctx, ZSTD_c_ldmHashRateLog, prefs->ldmHashRateLog) );
         }
-
         /* compression parameters */
         CHECK( ZSTD_CCtx_setParameter(ress.cctx, ZSTD_c_windowLog, (int)comprParams.windowLog) );
         CHECK( ZSTD_CCtx_setParameter(ress.cctx, ZSTD_c_chainLog, (int)comprParams.chainLog) );
