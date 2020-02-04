@@ -457,6 +457,18 @@ ls tmp* > tmpList
 $ZSTD -f tmp1 --filelist=tmpList --filelist=tmpList tmp2 tmp3  # can trigger an overflow of internal file list
 rm -rf tmp*
 
+println "test : show-default-cparams regular"
+$DATAGEN > tmp
+$ZSTD --show-default-cparams -f tmp
+rm -rf tmp*
+
+println "test : show-default-cparams recursive"
+mkdir tmp_files
+$DATAGEN -g15000 > tmp_files/tmp1
+$DATAGEN -g129000 > tmp_files/tmp2
+$DATAGEN -g257000 > tmp_files/tmp3
+$ZSTD --show-default-cparams -f -r tmp_files
+rm -rf tmp*
 
 println "\n===>  Advanced compression parameters "
 println "Hello world!" | $ZSTD --zstd=windowLog=21,      - -o tmp.zst && die "wrong parameters not detected!"
@@ -1239,8 +1251,8 @@ roundTripTest -g18000017 -P88 17
 roundTripTest -g18000018 -P94 18
 roundTripTest -g18000019 -P96 19
 
-roundTripTest -g5000000000 -P99 1
-roundTripTest -g1700000000 -P0 "1 --zstd=strategy=6"   # ensure btlazy2 can survive an overflow rescale
+roundTripTest -g5000000000 -P99 "1 --zstd=wlog=25"
+roundTripTest -g3700000000 -P0 "1 --zstd=strategy=6,wlog=25"   # ensure btlazy2 can survive an overflow rescale
 
 fileRoundTripTest -g4193M -P99 1
 
