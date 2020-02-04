@@ -2792,13 +2792,14 @@ static size_t ZSTD_loadDictionaryContent(ZSTD_matchState_t* ms,
     const BYTE* const iend = ip + srcSize;
 
     ZSTD_window_update(&ms->window, src, srcSize);
+    ms->loadedDictEnd = params->forceWindow ? 0 : (U32)(iend - ms->window.base);
 
-    if (params->ldmParams.enableLdm) {
+    if (params->ldmParams.enableLdm && ls != NULL) {
         /* Update window inside ldm state */
         ZSTD_window_update(&ls->window, src, srcSize);
+        /* TODO: Still need to make sure ldm dictionaries work well in multi-threading mode */
+        ls->loadedDictEnd = params->forceWindow ? 0 : (U32)(iend - ls->window.base);
     }
-
-    ms->loadedDictEnd = params->forceWindow ? 0 : (U32)(iend - ms->window.base);
 
     /* Assert that we the ms params match the params we're being given */
     ZSTD_assertEqualCParams(params->cParams, ms->cParams);

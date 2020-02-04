@@ -77,8 +77,6 @@
 
 #define FNSPACE 30
 
-#define PATCHFROM_WINDOWSIZE_EXTRA_BYTES 1 KB
-
 /*-*************************************
 *  Macros
 ***************************************/
@@ -826,7 +824,7 @@ static cRess_t FIO_createCResources(FIO_prefs_t* const prefs,
 
         if (prefs->patchFromMode) {
             /* Make sure there is enough room for dict and src in long mode */
-            comprParams.windowLog = FIO_highbit64((unsigned long long)maxSrcFileSize + dictBuffSize + PATCHFROM_WINDOWSIZE_EXTRA_BYTES) + 1;
+            comprParams.windowLog = FIO_highbit64((unsigned long long)maxSrcFileSize) + 1;
         }
 
         CHECK( ZSTD_CCtx_setParameter(ress.cctx, ZSTD_c_contentSizeFlag, 1) );  /* always enable content size when available (note: supposed to be default) */
