@@ -1199,20 +1199,22 @@ int main(int const argCount, const char* argv[])
     /* IO Stream/File */
     FIO_setNotificationLevel(g_displayLevel);
     FIO_setPatchFromMode(prefs, patchFromDictFileName != NULL);
-    if (patchFromDictFileName != NULL) {
-        const unsigned long long dictSize = UTIL_getFileSize(patchFromDictFileName);
-        if (dictSize != UTIL_FILESIZE_UNKNOWN) {
-            memLimit = (unsigned)dictSize;
-            ldmFlag = dictSize > PATCHFROM_LONG_THRESH;
-        }
-        dictFileName = patchFromDictFileName;
-    }
     if (memLimit == 0) {
         if (compressionParams.windowLog == 0) {
             memLimit = (U32)1 << g_defaultMaxWindowLog;
         } else {
             memLimit = (U32)1 << (compressionParams.windowLog & 31);
     }   }
+    if (patchFromDictFileName != NULL) {
+        const unsigned long long dictSize = UTIL_getFileSize(patchFromDictFileName);
+        if (dictSize != UTIL_FILESIZE_UNKNOWN) {
+            memLimit = dictSize > memLimit ? (unsigned)dictSize : memLimit;
+#ifndef ZSTD_NOCOMPRESS
+            ldmFlag = dictSize > PATCHFROM_LONG_THRESH;
+#endif
+        }
+        dictFileName = patchFromDictFileName;
+    }
     FIO_setMemLimit(prefs, memLimit);
     if (operation==zom_compress) {
 #ifndef ZSTD_NOCOMPRESS
