@@ -1202,7 +1202,7 @@ int main(int const argCount, const char* argv[])
     if (patchFromDictFileName != NULL) {
         const unsigned long long dictSize = UTIL_getFileSize(patchFromDictFileName);
         if (dictSize != UTIL_FILESIZE_UNKNOWN) {
-            memLimit = dictSize;
+            memLimit = (unsigned)dictSize;
             ldmFlag = dictSize > PATCHFROM_LONG_THRESH;
         }
         dictFileName = patchFromDictFileName;
