@@ -1198,6 +1198,10 @@ int main(int const argCount, const char* argv[])
     FIO_setNotificationLevel(g_displayLevel);
     FIO_setPatchFromMode(prefs, patchFromDictFileName != NULL);
     if (patchFromDictFileName != NULL) {
+        const unsigned long long dictSize = UTIL_getFileSize(patchFromDictFileName);
+        if (dictSize != UTIL_FILESIZE_UNKNOWN) {
+            memLimit = dictSize;
+        }
         dictFileName = patchFromDictFileName;
     }
     if (memLimit == 0) {
