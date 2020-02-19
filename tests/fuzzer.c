@@ -490,6 +490,24 @@ static int basicUnitTests(U32 const seed, double compressibility)
     }
     DISPLAYLEVEL(3, "OK \n");
 
+    DISPLAYLEVEL(3, "test%3i :  : ldm fill dict out-of-bounds check", testNb++);
+    {
+        ZSTD_CCtx* const cctx = ZSTD_createCCtx();
+        
+        const void* dict = CNBuffer;
+        const size_t dictSize = CNBuffSize/2;
+        const void* src = CNBuffer + CNBuffSize/2; 
+        const size_t srcSize = CNBuffSize/2;
+        void* dst = compressedBuffer;
+        const size_t dstSize = compressedBufferSize;
+
+        CHECK_Z(ZSTD_CCtx_setParameter(cctx, ZSTD_c_enableLongDistanceMatching, 1));
+        assert(!ZSTD_isError(ZSTD_compress_usingDict(cctx, dst, dstSize, src, srcSize, dict, dictSize, 3)));
+
+        ZSTD_freeCCtx(cctx);
+    }
+    DISPLAYLEVEL(3, "OK \n");
+
     DISPLAYLEVEL(3, "test%3d: superblock uncompressible data, too many nocompress superblocks : ", testNb++)
     {
         ZSTD_CCtx* const cctx = ZSTD_createCCtx();
