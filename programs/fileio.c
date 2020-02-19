@@ -776,14 +776,15 @@ typedef struct {
     size_t srcBufferSize;
     void*  dstBuffer;
     size_t dstBufferSize;
+    void* dictBuffer;
+    size_t dictBufferSize;
     const char* dictFileName;
     ZSTD_CStream* cctx;
 } cRess_t;
 
 static cRess_t FIO_createCResources(FIO_prefs_t* const prefs,
                                     const char* dictFileName, const size_t maxSrcFileSize,
-                                    int cLevel, ZSTD_compressionParameters comprParams,
-                                    void* dictBuffer, size_t const dictBuffSize) {
+                                    int cLevel, ZSTD_compressionParameters comprParams) {
     cRess_t ress;
     memset(&ress, 0, sizeof(ress));
 
@@ -796,11 +797,12 @@ static cRess_t FIO_createCResources(FIO_prefs_t* const prefs,
     ress.srcBuffer = malloc(ress.srcBufferSize);
     ress.dstBufferSize = ZSTD_CStreamOutSize();
     ress.dstBuffer = malloc(ress.dstBufferSize);
+    ress.dictBufferSize = FIO_createDictBuffer(&ress.dictBuffer, dictFileName, prefs);   /* works with dictFileName==NULL */
     if (!ress.srcBuffer || !ress.dstBuffer)
         EXM_THROW(31, "allocation error : not enough memory");
 
     /* Advanced parameters, including dictionary */
-    {   if (dictFileName && (dictBuffer==NULL))
+    {   if (dictFileName && (ress.dictBuffer==NULL))
             EXM_THROW(32, "allocation error : can't create dictBuffer");
         ress.dictFileName = dictFileName;
 
@@ -853,9 +855,9 @@ static cRess_t FIO_createCResources(FIO_prefs_t* const prefs,
 #endif
         /* dictionary */
         if (prefs->patchFromMode) {
-            CHECK( ZSTD_CCtx_refPrefix(ress.cctx, dictBuffer, dictBuffSize) );
+            CHECK( ZSTD_CCtx_refPrefix(ress.cctx, ress.dictBuffer, ress.dictBufferSize) );
         } else {
-            CHECK( ZSTD_CCtx_loadDictionary(ress.cctx, dictBuffer, dictBuffSize) );
+            CHECK( ZSTD_CCtx_loadDictionary(ress.cctx, ress.dictBuffer, ress.dictBufferSize) );
         }
     }
 
@@ -866,6 +868,7 @@ static void FIO_freeCResources(cRess_t ress)
 {
     free(ress.srcBuffer);
     free(ress.dstBuffer);
+    if (ress.dictBuffer) free(ress.dictBuffer);
     ZSTD_freeCStream(ress.cctx);   /* never fails */
 }
 
@@ -1543,14 +1546,9 @@ int FIO_compressFilename(FIO_prefs_t* const prefs, const char* dstFileName,
                          const char* srcFileName, const char* dictFileName,
                          int compressionLevel,  ZSTD_compressionParameters comprParams)
 {
-    void* dictBuffer;
-    size_t const dictBuffSize = FIO_createDictBuffer(&dictBuffer, dictFileName, prefs);   /* works with dictFileName==NULL */
-    cRess_t const ress = FIO_createCResources(prefs, dictFileName, (size_t)UTIL_getFileSize(srcFileName), compressionLevel, comprParams, dictBuffer, dictBuffSize);
+    cRess_t const ress = FIO_createCResources(prefs, dictFileName, (size_t)UTIL_getFileSize(srcFileName), compressionLevel, comprParams);
     int const result = FIO_compressFilename_srcFile(prefs, ress, dstFileName, srcFileName, compressionLevel);
 
-
-    /* Need to keep dictBuffer around for patchFromMode (which uses refPrefix()) */
-    if (dictBuffer != NULL) free(dictBuffer);
     FIO_freeCResources(ress);
     return result;
 }
@@ -1619,11 +1617,9 @@ int FIO_compressMultipleFilenames(FIO_prefs_t* const prefs,
                                   ZSTD_compressionParameters comprParams)
 {
     int error = 0;
-    void* dictBuffer;
-    size_t const dictBuffSize = FIO_createDictBuffer(&dictBuffer, dictFileName, prefs);   /* works with dictFileName==NULL */
     cRess_t ress = FIO_createCResources(prefs, dictFileName,
         FIO_getLargestFileSize(inFileNamesTable, nbFiles),
-        compressionLevel, comprParams, dictBuffer, dictBuffSize);
+        compressionLevel, comprParams);
 
     /* init */
     assert(outFileName != NULL || suffix != NULL);
@@ -1651,8 +1647,6 @@ int FIO_compressMultipleFilenames(FIO_prefs_t* const prefs,
             FIO_checkFilenameCollisions(inFileNamesTable ,nbFiles);
     }
 
-    /* Need to keep dictBuffer around for patchFromMode (which uses refPrefix()) */
-    if (dictBuffer != NULL) free(dictBuffer);
     FIO_freeCResources(ress);
     return error;
 }
