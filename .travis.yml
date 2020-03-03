@@ -30,6 +30,12 @@ env:
 matrix:
   fast_finish: true
   include:
+    - os: linux
+      sudo: false
+      env: COMPONENTS=icc
+      script: 
+        - make test
+
     - name: arm64    # ~2.5 mn
       os: linux
       arch: arm64
