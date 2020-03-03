@@ -350,6 +350,16 @@ static int basicUnitTests(U32 const seed, double compressibility)
     }
     RDG_genBuffer(CNBuffer, CNBuffSize, compressibility, 0., seed);
 
+#if defined(_MSC_VER)
+     /* Basic tests */
+    DISPLAYLEVEL(3, "test%3u : _BitReverse : ", testNb++);
+    {   
+        unsigned long index = 0;
+        _BitScanReverse(&index, 0x0ull);
+        assert(index == 0);
+    }
+#endif 
+
     /* Basic tests */
     DISPLAYLEVEL(3, "test%3u : ZSTD_getErrorName : ", testNb++);
     {   const char* errorString = ZSTD_getErrorName(0);
