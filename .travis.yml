@@ -30,6 +30,7 @@ matrix:
       env:
       - C_COMPILER=icc
       - CXX_COMPILER=icpc
+      - COMPILER_FLAGS='-qopt-report=4 -qopt-report-phase'
       install:
       - source /opt/intel/inteloneapi/compiler/latest/env/vars.sh
       addons:
@@ -40,6 +41,7 @@ matrix:
           packages:
           - intel-oneapi-icc
       script: make test
+
 
     - name: arm64    # ~2.5 mn
       os: linux
