@@ -40,7 +40,7 @@ matrix:
             key_url: 'https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB'
           packages:
           - intel-oneapi-icc
-      script: make test
+      script: make test MOREFLAGS='-qopt-report=4 -qopt-report-phase ipo'
 
 
     - name: arm64    # ~2.5 mn
