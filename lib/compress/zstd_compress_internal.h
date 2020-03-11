@@ -249,6 +249,8 @@ struct ZSTD_CCtx_s {
     ldmState_t ldmState;      /* long distance matching state */
     ZSTD_Sequence* ldmSequences; /* Storage for the ldm output sequences */
     size_t maxNbLdmSequences;
+    ZSTD_Sequence* dictSequences;
+    size_t nbDictSequences;
     rawSeqStore_t externSeqStore; /* Mutable reference to external sequences */
     ZSTD_blockState_t blockState;
     U32* entropyWorkspace;  /* entropy workspace of HUF_WORKSPACE_SIZE bytes */
