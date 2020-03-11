@@ -2693,6 +2693,14 @@ size_t ZSTD_referenceExternalSequences(ZSTD_CCtx* cctx, ZSTD_Sequence* seq, size
 }
 
 
+size_t ZSTD_genDictSequences(ZSTD_CCtx* cctx, ZSTD_Sequence* dictSequences,
+                                const void* dict, size_t dictSize,
+                                const void* src, size_t srcSize)
+{
+    DEBUGLOG(5, "ZSTD_genDictSequences(dictSize=%u srcSize=%u)", (unsigned)dictSize, (unsigned)srcSize);
+    return 0;
+}
+
 static size_t ZSTD_compressContinue_internal (ZSTD_CCtx* cctx,
                               void* dst, size_t dstCapacity,
                         const void* src, size_t srcSize,

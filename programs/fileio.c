@@ -33,6 +33,7 @@
 #include <limits.h>     /* INT_MAX */
 #include <signal.h>
 #include "timefn.h"     /* UTIL_getTime, UTIL_clockSpanMicro */
+#include "zstd_compress_internal.h"
 
 #if defined (_MSC_VER)
 #  include <sys/stat.h>
@@ -68,9 +69,6 @@
 /*-*************************************
 *  Constants
 ***************************************/
-#define KB *(1<<10)
-#define MB *(1<<20)
-#define GB *(1U<<30)
 
 #define ADAPT_WINDOWLOG_DEFAULT 23   /* 8 MB */
 #define DICTSIZE_MAX (32 MB)   /* protection against large input (attack scenario) */
@@ -787,6 +785,8 @@ typedef struct {
     const char* dictFileName;
     void* dictBuffer;
     size_t dictBufferSize;
+    ZSTD_Sequence* dictSequences;
+    size_t nbDictSequences;
     ZSTD_CStream* cctx;
 } cRess_t;
 
@@ -805,6 +805,10 @@ static cRess_t FIO_createCResources(FIO_prefs_t* const prefs,
     ress.srcBuffer = malloc(ress.srcBufferSize);
     ress.dstBufferSize = ZSTD_CStreamOutSize();
     ress.dstBuffer = malloc(ress.dstBufferSize);
+    if (prefs->patchFromMode) {
+        ress.dictSequences = malloc(ZSTD_MAX_NB_DICT_SEQUENCES * sizeof(ZSTD_Sequence));
+        ress.nbDictSequences = 0;
+    }
     if (!ress.srcBuffer || !ress.dstBuffer)
         EXM_THROW(31, "allocation error : not enough memory");
 
@@ -873,6 +877,7 @@ static void FIO_freeCResources(cRess_t ress)
     free(ress.srcBuffer);
     free(ress.dstBuffer);
     if (ress.dictBuffer) free(ress.dictBuffer);
+    if (ress.dictSequences) free(ress.dictSequences);
     ZSTD_freeCStream(ress.cctx);   /* never fails */
 }
 
@@ -1136,6 +1141,25 @@ FIO_compressLz4Frame(cRess_t* ress,
 }
 #endif
 
+static void FIO_genDictSequences(const cRess_t* ressPtr,
+                    const char* srcFileName, U64 fileSize)
+{
+    ZSTD_CCtx* cctx = ressPtr->cctx;
+    void* dict = ressPtr->dictBuffer;
+    size_t dictSize = ressPtr->dictBufferSize;
+    void* src = malloc(fileSize);
+    size_t srcSize = fileSize;
+    ZSTD_Sequence* dictSequences = ressPtr->dictSequences;
+    FILE* file = fopen(srcFileName, "rb");
+
+    fread(src, sizeof(BYTE), fileSize, file);
+    fclose(file);
+
+    ZSTD_genDictSequences(cctx, dictSequences, 
+        dict, dictSize, src, fileSize);
+
+    free(src);
+}
 
 static unsigned long long
 FIO_compressZstdFrame(FIO_prefs_t* const prefs,
@@ -1160,6 +1184,10 @@ FIO_compressZstdFrame(FIO_prefs_t* const prefs,
     unsigned lastJobID = 0;
 
     DISPLAYLEVEL(6, "compression using zstd format \n");
+
+    if (prefs->patchFromMode) {
+        FIO_genDictSequences(ressPtr, srcFileName, fileSize);
+    }
 
     /* init */
     if (fileSize != UTIL_FILESIZE_UNKNOWN) {

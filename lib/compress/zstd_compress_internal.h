@@ -1045,5 +1045,11 @@ size_t ZSTD_writeLastEmptyBlock(void* dst, size_t dstCapacity);
  */
 size_t ZSTD_referenceExternalSequences(ZSTD_CCtx* cctx, ZSTD_Sequence* seq, size_t nbSeq);
 
+#define ZSTD_MAX_NB_DICT_SEQUENCES (1 << 10)
+
+size_t ZSTD_genDictSequences(ZSTD_CCtx* cctx, ZSTD_Sequence* dictSequences,
+                                const void* dict, size_t dictSize,
+                                const void* src, size_t srcSize);
+
 
 #endif /* ZSTD_COMPRESS_H */
