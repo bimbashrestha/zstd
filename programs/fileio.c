@@ -785,6 +785,8 @@ typedef struct {
     void*  dstBuffer;
     size_t dstBufferSize;
     const char* dictFileName;
+    void* dictBuffer;
+    size_t dictBufferSize;
     ZSTD_CStream* cctx;
 } cRess_t;
 
@@ -807,9 +809,8 @@ static cRess_t FIO_createCResources(FIO_prefs_t* const prefs,
         EXM_THROW(31, "allocation error : not enough memory");
 
     /* Advanced parameters, including dictionary */
-    {   void* dictBuffer;
-        size_t const dictBuffSize = FIO_createDictBuffer(&dictBuffer, dictFileName, prefs);   /* works with dictFileName==NULL */
-        if (dictFileName && (dictBuffer==NULL))
+    {   ress.dictBufferSize = FIO_createDictBuffer(&ress.dictBuffer, dictFileName, prefs);
+        if (dictFileName && (ress.dictBuffer==NULL))
             EXM_THROW(32, "allocation error : can't create dictBuffer");
         ress.dictFileName = dictFileName;
 
@@ -861,8 +862,7 @@ static cRess_t FIO_createCResources(FIO_prefs_t* const prefs,
         CHECK( ZSTD_CCtx_setParameter(ress.cctx, ZSTD_c_rsyncable, prefs->rsyncable) );
 #endif
         /* dictionary */
-        CHECK( ZSTD_CCtx_loadDictionary(ress.cctx, dictBuffer, dictBuffSize) );
-        free(dictBuffer);
+        CHECK( ZSTD_CCtx_loadDictionary(ress.cctx, ress.dictBuffer, ress.dictBufferSize) );
     }
 
     return ress;
@@ -872,6 +872,7 @@ static void FIO_freeCResources(cRess_t ress)
 {
     free(ress.srcBuffer);
     free(ress.dstBuffer);
+    if (ress.dictBuffer) free(ress.dictBuffer);
     ZSTD_freeCStream(ress.cctx);   /* never fails */
 }
 
