@@ -1132,7 +1132,7 @@ size_t ZSTD_estimateCCtxSize_usingCCtxParams(const ZSTD_CCtx_params* params)
         size_t const matchStateSize = ZSTD_sizeof_matchState(&cParams, /* forCCtx */ 1);
 
         size_t const ldmSpace = ZSTD_ldm_getTableSize(params->ldmParams);
-        size_t const ldmSeqSpace = ZSTD_cwksp_alloc_size(ZSTD_ldm_getMaxNbSeq(params->ldmParams, blockSize) * sizeof(rawSeq));
+        size_t const ldmSeqSpace = ZSTD_cwksp_alloc_size(ZSTD_ldm_getMaxNbSeq(params->ldmParams, blockSize) * sizeof(ZSTD_Sequence));
 
         size_t const neededSpace = entropySpace + blockStateSpace + tokenSpace +
                                    matchStateSize + ldmSpace + ldmSeqSpace;
@@ -1443,7 +1443,7 @@ static size_t ZSTD_resetCCtx_internal(ZSTD_CCtx* zc,
             size_t const blockStateSpace = 2 * ZSTD_cwksp_alloc_size(sizeof(ZSTD_compressedBlockState_t));
             size_t const bufferSpace = ZSTD_cwksp_alloc_size(buffInSize) + ZSTD_cwksp_alloc_size(buffOutSize);
             size_t const ldmSpace = ZSTD_ldm_getTableSize(params.ldmParams);
-            size_t const ldmSeqSpace = ZSTD_cwksp_alloc_size(maxNbLdmSeq * sizeof(rawSeq));
+            size_t const ldmSeqSpace = ZSTD_cwksp_alloc_size(maxNbLdmSeq * sizeof(ZSTD_Sequence));
 
             size_t const neededSpace =
                 cctxSpace +
@@ -1551,7 +1551,7 @@ static size_t ZSTD_resetCCtx_internal(ZSTD_CCtx* zc,
             size_t const ldmHSize = ((size_t)1) << params.ldmParams.hashLog;
             zc->ldmState.hashTable = (ldmEntry_t*)ZSTD_cwksp_reserve_aligned(ws, ldmHSize * sizeof(ldmEntry_t));
             memset(zc->ldmState.hashTable, 0, ldmHSize * sizeof(ldmEntry_t));
-            zc->ldmSequences = (rawSeq*)ZSTD_cwksp_reserve_aligned(ws, maxNbLdmSeq * sizeof(rawSeq));
+            zc->ldmSequences = (ZSTD_Sequence*)ZSTD_cwksp_reserve_aligned(ws, maxNbLdmSeq * sizeof(ZSTD_Sequence));
             zc->maxNbLdmSequences = maxNbLdmSeq;
 
             ZSTD_window_init(&zc->ldmState.window);
@@ -2680,7 +2680,7 @@ size_t ZSTD_writeLastEmptyBlock(void* dst, size_t dstCapacity)
     }
 }
 
-size_t ZSTD_referenceExternalSequences(ZSTD_CCtx* cctx, rawSeq* seq, size_t nbSeq)
+size_t ZSTD_referenceExternalSequences(ZSTD_CCtx* cctx, ZSTD_Sequence* seq, size_t nbSeq)
 {
     RETURN_ERROR_IF(cctx->stage != ZSTDcs_init, stage_wrong);
     RETURN_ERROR_IF(cctx->appliedParams.ldmParams.enableLdm,

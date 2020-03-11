@@ -367,7 +367,7 @@ static size_t ZSTD_ldm_generateSequences_internal(
              */
             U32 const matchIndex = bestEntry->offset;
             U32 const offset = current - matchIndex;
-            rawSeq* const seq = rawSeqStore->seq + rawSeqStore->size;
+            ZSTD_Sequence* const seq = rawSeqStore->seq + rawSeqStore->size;
 
             /* Out of sequence storage */
             if (rawSeqStore->size == rawSeqStore->capacity)
@@ -482,7 +482,7 @@ size_t ZSTD_ldm_generateSequences(
 
 void ZSTD_ldm_skipSequences(rawSeqStore_t* rawSeqStore, size_t srcSize, U32 const minMatch) {
     while (srcSize > 0 && rawSeqStore->pos < rawSeqStore->size) {
-        rawSeq* seq = rawSeqStore->seq + rawSeqStore->pos;
+        ZSTD_Sequence* seq = rawSeqStore->seq + rawSeqStore->pos;
         if (srcSize <= seq->litLength) {
             /* Skip past srcSize literals */
             seq->litLength -= (U32)srcSize;
@@ -515,10 +515,10 @@ void ZSTD_ldm_skipSequences(rawSeqStore_t* rawSeqStore, size_t srcSize, U32 cons
  * Returns the current sequence to handle, or if the rest of the block should
  * be literals, it returns a sequence with offset == 0.
  */
-static rawSeq maybeSplitSequence(rawSeqStore_t* rawSeqStore,
+static ZSTD_Sequence maybeSplitSequence(rawSeqStore_t* rawSeqStore,
                                  U32 const remaining, U32 const minMatch)
 {
-    rawSeq sequence = rawSeqStore->seq[rawSeqStore->pos];
+    ZSTD_Sequence sequence = rawSeqStore->seq[rawSeqStore->pos];
     assert(sequence.offset > 0);
     /* Likely: No partial sequence */
     if (remaining >= sequence.litLength + sequence.matchLength) {
@@ -559,7 +559,7 @@ size_t ZSTD_ldm_blockCompress(rawSeqStore_t* rawSeqStore,
     /* Loop through each sequence and apply the block compressor to the lits */
     while (rawSeqStore->pos < rawSeqStore->size && ip < iend) {
         /* maybeSplitSequence updates rawSeqStore->pos */
-        rawSeq const sequence = maybeSplitSequence(rawSeqStore,
+        ZSTD_Sequence const sequence = maybeSplitSequence(rawSeqStore,
                                                    (U32)(iend - ip), minMatch);
         int i;
         /* End signal */

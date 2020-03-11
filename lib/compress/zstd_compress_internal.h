@@ -181,13 +181,7 @@ typedef struct {
 } ldmParams_t;
 
 typedef struct {
-    U32 offset;
-    U32 litLength;
-    U32 matchLength;
-} rawSeq;
-
-typedef struct {
-  rawSeq* seq;     /* The start of the sequences */
+  ZSTD_Sequence* seq; /* The start of the sequences */
   size_t pos;      /* The position where reading stopped. <= size. */
   size_t size;     /* The number of sequences. <= capacity. */
   size_t capacity; /* The capacity starting from `seq` pointer */
@@ -253,7 +247,7 @@ struct ZSTD_CCtx_s {
 
     seqStore_t seqStore;      /* sequences storage ptrs */
     ldmState_t ldmState;      /* long distance matching state */
-    rawSeq* ldmSequences;     /* Storage for the ldm output sequences */
+    ZSTD_Sequence* ldmSequences; /* Storage for the ldm output sequences */
     size_t maxNbLdmSequences;
     rawSeqStore_t externSeqStore; /* Mutable reference to external sequences */
     ZSTD_blockState_t blockState;
@@ -1049,7 +1043,7 @@ size_t ZSTD_writeLastEmptyBlock(void* dst, size_t dstCapacity);
  * NOTE: seqs are not verified! Invalid sequences can cause out-of-bounds memory
  * access and data corruption.
  */
-size_t ZSTD_referenceExternalSequences(ZSTD_CCtx* cctx, rawSeq* seq, size_t nbSeq);
+size_t ZSTD_referenceExternalSequences(ZSTD_CCtx* cctx, ZSTD_Sequence* seq, size_t nbSeq);
 
 
 #endif /* ZSTD_COMPRESS_H */

@@ -279,8 +279,8 @@ static size_t ZSTDMT_sizeof_seqPool(ZSTDMT_seqPool* seqPool)
 static rawSeqStore_t bufferToSeq(buffer_t buffer)
 {
     rawSeqStore_t seq = {NULL, 0, 0, 0};
-    seq.seq = (rawSeq*)buffer.start;
-    seq.capacity = buffer.capacity / sizeof(rawSeq);
+    seq.seq = (ZSTD_Sequence*)buffer.start;
+    seq.capacity = buffer.capacity / sizeof(ZSTD_Sequence);
     return seq;
 }
 
@@ -288,7 +288,7 @@ static buffer_t seqToBuffer(rawSeqStore_t seq)
 {
     buffer_t buffer;
     buffer.start = seq.seq;
-    buffer.capacity = seq.capacity * sizeof(rawSeq);
+    buffer.capacity = seq.capacity * sizeof(ZSTD_Sequence);
     return buffer;
 }
 
@@ -314,7 +314,7 @@ static void ZSTDMT_releaseSeq(ZSTDMT_seqPool* seqPool, rawSeqStore_t seq)
 
 static void ZSTDMT_setNbSeq(ZSTDMT_seqPool* const seqPool, size_t const nbSeq)
 {
-  ZSTDMT_setBufferSize(seqPool, nbSeq * sizeof(rawSeq));
+  ZSTDMT_setBufferSize(seqPool, nbSeq * sizeof(ZSTD_Sequence));
 }
 
 static ZSTDMT_seqPool* ZSTDMT_createSeqPool(unsigned nbWorkers, ZSTD_customMem cMem)
