@@ -566,7 +566,6 @@ size_t ZSTD_ldm_blockCompress(rawSeqStore_t* rawSeqStore,
         if (sequence.offset == 0)
             break;
 
-        assert(sequence.offset <= (1U << cParams->windowLog));
         assert(ip + sequence.litLength + sequence.matchLength <= iend);
 
         /* Fill tables for block compressor */

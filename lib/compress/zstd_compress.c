@@ -29,6 +29,7 @@
 #include "zstd_opt.h"
 #include "zstd_ldm.h"
 #include "zstd_compress_superblock.h"
+#include "zstd_edist.h"
 
 
 /*-*************************************
@@ -1530,7 +1531,7 @@ static size_t ZSTD_resetCCtx_internal(ZSTD_CCtx* zc,
         }
 
         /* sequences storage */
-        ZSTD_referenceExternalSequences(zc, NULL, 0);
+        ZSTD_referenceExternalSequences(zc, zc->dictSequences, zc->nbDictSequences);
         zc->seqStore.maxNbSeq = maxNbSeq;
         zc->seqStore.llCode = ZSTD_cwksp_reserve_buffer(ws, maxNbSeq * sizeof(BYTE));
         zc->seqStore.mlCode = ZSTD_cwksp_reserve_buffer(ws, maxNbSeq * sizeof(BYTE));
@@ -2692,15 +2693,24 @@ size_t ZSTD_referenceExternalSequences(ZSTD_CCtx* cctx, ZSTD_Sequence* seq, size
     return 0;
 }
 
+static size_t ZSTD_genDictSequences_internal(ZSTD_Sequence* dictSequences, 
+                                const void* dict, size_t dictSize,
+                                const void* src, size_t srcSize)
+{
+    size_t const nbSequences = ZSTD_eDist_genSequences(dictSequences, dict, dictSize, src, srcSize);
+    return nbSequences;
+}
 
 size_t ZSTD_genDictSequences(ZSTD_CCtx* cctx, ZSTD_Sequence* dictSequences,
                                 const void* dict, size_t dictSize,
                                 const void* src, size_t srcSize)
 {
     DEBUGLOG(5, "ZSTD_genDictSequences(dictSize=%u srcSize=%u)", (unsigned)dictSize, (unsigned)srcSize);
+    size_t nbDictSequences = ZSTD_genDictSequences_internal(dictSequences, 
+        dict, dictSize, src, srcSize);
     cctx->dictSequences = dictSequences;
-    cctx->nbDictSequences = 0;
-    return 0;
+    cctx->nbDictSequences = nbDictSequences;
+    return nbDictSequences;
 }
 
 static size_t ZSTD_compressContinue_internal (ZSTD_CCtx* cctx,
