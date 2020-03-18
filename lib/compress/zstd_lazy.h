@@ -17,6 +17,8 @@ extern "C" {
 
 #include "zstd_compress_internal.h"
 
+void ZSTD_loadDictionary_lazy(ZSTD_matchState_t* ms, const BYTE* const ip);
+
 U32 ZSTD_insertAndFindFirstIndex(ZSTD_matchState_t* ms, const BYTE* ip);
 
 void ZSTD_preserveUnsortedMark (U32* const table, U32 const size, U32 const reducerValue);  /*! used in ZSTD_reduceIndex(). preemptively increase value of ZSTD_DUBT_UNSORTED_MARK */

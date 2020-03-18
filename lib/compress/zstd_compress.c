@@ -2818,7 +2818,7 @@ static size_t ZSTD_loadDictionaryContent(ZSTD_matchState_t* ms,
         case ZSTD_lazy:
         case ZSTD_lazy2:
             if (chunk >= HASH_READ_SIZE)
-                ZSTD_insertAndFindFirstIndex(ms, ichunk-HASH_READ_SIZE);
+                ZSTD_loadDictionary_lazy(ms, ichunk-HASH_READ_SIZE);
             break;
 
         case ZSTD_btlazy2:   /* we want the dictionary table fully sorted */
