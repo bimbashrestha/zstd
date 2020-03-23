@@ -1211,12 +1211,11 @@ int main(int const argCount, const char* argv[])
             memLimit = (U32)1 << (compressionParams.windowLog & 31);
     }   }
     if (patchFromDictFileName != NULL) {
-        const unsigned long long dictSize = UTIL_getFileSize(patchFromDictFileName);
-        if (dictSize != UTIL_FILESIZE_UNKNOWN) {
-            memLimit = dictSize > memLimit ? (unsigned)dictSize : memLimit;
-#ifndef ZSTD_NOCOMPRESS
-            ldmFlag = dictSize > PATCHFROM_LONG_THRESH;
-#endif
+        const char* const srcFileName = filenames->fileNames[0];
+        const unsigned long long fileSize = UTIL_getFileSize(srcFileName);
+        if (fileSize != UTIL_FILESIZE_UNKNOWN) {
+            memLimit = fileSize > memLimit ? (unsigned)fileSize : memLimit;
+            ldmFlag = fileSize > PATCHFROM_LONG_THRESH;
         }
         dictFileName = patchFromDictFileName;
     }
