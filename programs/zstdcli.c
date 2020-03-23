@@ -544,6 +544,8 @@ static int init_cLevel(void) {
     return ZSTDCLI_CLEVEL_DEFAULT;
 }
 
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 #define PATCHFROM_LONG_THRESH 32 MB
 
 #define ZSTD_NB_STRATEGIES 9
@@ -1215,8 +1217,9 @@ int main(int const argCount, const char* argv[])
         if (patchFromDictFileName != NULL) {
             const char* const srcFileName = filenames->fileNames[0];
             const unsigned long long fileSize = UTIL_getFileSize(srcFileName);
-            if (fileSize != UTIL_FILESIZE_UNKNOWN) {
-                memLimit = fileSize > memLimit ? (unsigned)fileSize : memLimit;
+            const unsigned long long dictSize = UTIL_getFileSize(patchFromDictFileName);
+            if (fileSize != UTIL_FILESIZE_UNKNOWN && dictSize != UTIL_FILESIZE_UNKNOWN) {
+                memLimit = MAX(memLimit, MAX(dictSize, fileSize));
                 ldmFlag = fileSize > PATCHFROM_LONG_THRESH;
             }
             dictFileName = patchFromDictFileName;
