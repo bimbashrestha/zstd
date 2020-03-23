@@ -1210,18 +1210,18 @@ int main(int const argCount, const char* argv[])
         } else {
             memLimit = (U32)1 << (compressionParams.windowLog & 31);
     }   }
-    if (patchFromDictFileName != NULL) {
-        const char* const srcFileName = filenames->fileNames[0];
-        const unsigned long long fileSize = UTIL_getFileSize(srcFileName);
-        if (fileSize != UTIL_FILESIZE_UNKNOWN) {
-            memLimit = fileSize > memLimit ? (unsigned)fileSize : memLimit;
-            ldmFlag = fileSize > PATCHFROM_LONG_THRESH;
-        }
-        dictFileName = patchFromDictFileName;
-    }
-    FIO_setMemLimit(prefs, memLimit);
     if (operation==zom_compress) {
 #ifndef ZSTD_NOCOMPRESS
+        if (patchFromDictFileName != NULL) {
+            const char* const srcFileName = filenames->fileNames[0];
+            const unsigned long long fileSize = UTIL_getFileSize(srcFileName);
+            if (fileSize != UTIL_FILESIZE_UNKNOWN) {
+                memLimit = fileSize > memLimit ? (unsigned)fileSize : memLimit;
+                ldmFlag = fileSize > PATCHFROM_LONG_THRESH;
+            }
+            dictFileName = patchFromDictFileName;
+        }
+        FIO_setMemLimit(prefs, memLimit);
         FIO_setNbWorkers(prefs, nbWorkers);
         FIO_setBlockSize(prefs, (int)blockSize);
         if (g_overlapLog!=OVERLAP_LOG_DEFAULT) FIO_setOverlapLog(prefs, (int)g_overlapLog);
@@ -1273,6 +1273,7 @@ int main(int const argCount, const char* argv[])
 #endif
     } else {  /* decompression or test */
 #ifndef ZSTD_NODECOMPRESS
+        FIO_setMemLimit(prefs, memLimit);
         if (filenames->tableSize == 1 && outFileName) {
             operationResult = FIO_decompressFilename(prefs, outFileName, filenames->fileNames[0], dictFileName);
         } else {
