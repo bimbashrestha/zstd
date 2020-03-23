@@ -2797,7 +2797,6 @@ static size_t ZSTD_loadDictionaryContent(ZSTD_matchState_t* ms,
     if (params->ldmParams.enableLdm && ls != NULL) {
         /* Update window inside ldm state */
         ZSTD_window_update(&ls->window, src, srcSize);
-        /* TODO: Still need to make sure ldm dictionaries work well in multi-threading mode */
         ls->loadedDictEnd = params->forceWindow ? 0 : (U32)(iend - ls->window.base);
     }
 
