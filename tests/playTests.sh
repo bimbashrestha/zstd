@@ -1225,6 +1225,15 @@ $ZSTD -d --patch-from=tmp_dict tmp_patch_diff -o tmp_patch_recon
 $DIFF -s tmp_patch_recon tmp_patch
 rm -rf tmp_*
 
+println "\n===> patch-from recursive tests"
+
+mkdir tmp_dir
+$DATAGEN > tmp_dir/tmp1 
+$DATAGEN > tmp_dir/tmp2
+$DATAGEN > tmp_dict
+$ZSTD --patch-from=tmp_dict -r tmp_dir && die
+rm -rf tmp* 
+
 println "\n===>   large files tests "
 
 roundTripTest -g270000000 1
