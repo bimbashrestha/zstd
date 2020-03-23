@@ -811,7 +811,10 @@ static cRess_t FIO_createCResources(FIO_prefs_t* const prefs,
 
     if (prefs->patchFromMode) {
         /* Make sure there is enough room for dict and src in long mode */
-        comprParams.windowLog = FIO_highbit64((unsigned long long)maxSrcFileSize) + 1;
+        unsigned const fileWindowLog = FIO_highbit64((unsigned long long)maxSrcFileSize) + 1;
+        if (fileWindowLog > ZSTD_WINDOWLOG_MAX)
+            DISPLAYLEVEL(1, "Max window log exceeded by file (compression ratio will suffer).");
+        comprParams.windowLog = MIN(ZSTD_WINDOWLOG_MAX, fileWindowLog);
     }
 
     CHECK( ZSTD_CCtx_setParameter(ress.cctx, ZSTD_c_contentSizeFlag, 1) );  /* always enable content size when available (note: supposed to be default) */
