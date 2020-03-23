@@ -1212,6 +1212,8 @@ int main(int const argCount, const char* argv[])
         } else {
             memLimit = (U32)1 << (compressionParams.windowLog & 31);
     }   }
+    if (patchFromDictFileName != NULL)
+        dictFileName = patchFromDictFileName;
     if (operation==zom_compress) {
 #ifndef ZSTD_NOCOMPRESS
         if (patchFromDictFileName != NULL) {
@@ -1222,7 +1224,6 @@ int main(int const argCount, const char* argv[])
                 memLimit = MAX(memLimit, MAX(dictSize, fileSize));
                 ldmFlag = fileSize > PATCHFROM_LONG_THRESH;
             }
-            dictFileName = patchFromDictFileName;
         }
         FIO_setMemLimit(prefs, memLimit);
         FIO_setNbWorkers(prefs, nbWorkers);
