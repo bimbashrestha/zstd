@@ -871,7 +871,7 @@ static void FIO_freeCResources(cRess_t ress)
 {
     free(ress.srcBuffer);
     free(ress.dstBuffer);
-    if (ress.dictBuffer) free(ress.dictBuffer);
+    free(ress.dictBuffer);
     ZSTD_freeCStream(ress.cctx);   /* never fails */
 }
 
