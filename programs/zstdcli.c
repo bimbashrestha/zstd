@@ -1222,7 +1222,7 @@ int main(int const argCount, const char* argv[])
             const unsigned long long dictSize = UTIL_getFileSize(patchFromDictFileName);
             if (fileSize != UTIL_FILESIZE_UNKNOWN && dictSize != UTIL_FILESIZE_UNKNOWN) {
                 memLimit = MAX(memLimit, MAX(dictSize, fileSize));
-                ldmFlag = fileSize + dictSize > PATCHFROM_LONG_THRESH;
+                // ldmFlag = fileSize + dictSize > PATCHFROM_LONG_THRESH;
             }
         }
         FIO_setMemLimit(prefs, memLimit);
