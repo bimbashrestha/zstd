@@ -475,6 +475,17 @@ U32 ZSTD_insertAndFindFirstIndex(ZSTD_matchState_t* ms, const BYTE* ip) {
     return ZSTD_insertAndFindFirstIndex_internal(ms, cParams, ip, ms->cParams.minMatch);
 }
 
+void ZSTD_lazy_loadDictioanry(ZSTD_matchState_t* ms, const BYTE* ip)
+{
+    U32 const target = (U32)(ip - ms->window.base);
+    for (U32 idx = ms->nextToUpdate; idx < target; idx++) { 
+        size_t const h = ZSTD_hashPtr(ms->window.base + idx, ms->cParams.hashLog, ms->cParams.minMatch) << (ms->cParams.searchLog + 1);
+        memmove(ms->hashTable + h + 2, ms->hashTable + h + 1, (1U << ms->cParams.searchLog) - 1);
+        ms->hashTable[h + 1] = idx;
+        ms->hashTable[h]++;
+    }
+    ms->nextToUpdate = target;
+}
 
 /* inlining is important to hardwire a hot branch (template emulation) */
 FORCE_INLINE_TEMPLATE
@@ -543,7 +554,9 @@ size_t ZSTD_HcFindBestMatch_generic (
         const U32 dmsIndexDelta        = dictLimit - dmsSize;
         const U32 dmsMinChain = dmsSize > dmsChainSize ? dmsSize - dmsChainSize : 0;
 
-        matchIndex = dms->hashTable[ZSTD_hashPtr(ip, dms->cParams.hashLog, mls)];
+        size_t hash = ZSTD_hashPtr(ip, dms->cParams.hashLog, dms->cParams.minMatch) << (dms->cParams.searchLog + 1);
+        nbAttempts = MIN(dms->hashTable[hash++], nbAttempts);
+        matchIndex = dms->hashTable[++hash];
 
         for ( ; (matchIndex>dmsLowestIndex) & (nbAttempts>0) ; nbAttempts--) {
             size_t currentMl=0;
@@ -560,7 +573,7 @@ size_t ZSTD_HcFindBestMatch_generic (
             }
 
             if (matchIndex <= dmsMinChain) break;
-            matchIndex = dmsChainTable[matchIndex & dmsChainMask];
+            matchIndex = dms->hashTable[++hash];
         }
     }
 
