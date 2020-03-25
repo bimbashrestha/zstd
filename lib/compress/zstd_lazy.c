@@ -479,7 +479,9 @@ void ZSTD_lazy_loadDictioanry(ZSTD_matchState_t* ms, const BYTE* ip)
 {
     U32 const target = (U32)(ip - ms->window.base);
     for (U32 idx = ms->nextToUpdate; idx < target; idx++) { 
-        size_t const h = ZSTD_hashPtr(ms->window.base + idx, ms->cParams.hashLog, ms->cParams.minMatch) << (ms->cParams.searchLog + 1);
+        size_t const h = ZSTD_hashPtr(ms->window.base + idx, 
+            ms->cParams.hashLog - ms->cParams.searchLog - 1,
+            ms->cParams.minMatch) << (ms->cParams.searchLog + 1);
         memmove(ms->hashTable + h + 2, ms->hashTable + h + 1, (1U << ms->cParams.searchLog) - 1);
         ms->hashTable[h + 1] = idx;
         ms->hashTable[h]++;
@@ -554,7 +556,7 @@ size_t ZSTD_HcFindBestMatch_generic (
         const U32 dmsIndexDelta        = dictLimit - dmsSize;
         const U32 dmsMinChain = dmsSize > dmsChainSize ? dmsSize - dmsChainSize : 0;
 
-        size_t hash = ZSTD_hashPtr(ip, dms->cParams.hashLog, dms->cParams.minMatch) << (dms->cParams.searchLog + 1);
+        size_t hash = ZSTD_hashPtr(ip, dms->cParams.hashLog - dms->cParams.searchLog - 1, dms->cParams.minMatch) << (dms->cParams.searchLog + 1);
         nbAttempts = MIN(dms->hashTable[hash++], nbAttempts);
         matchIndex = dms->hashTable[++hash];
 
