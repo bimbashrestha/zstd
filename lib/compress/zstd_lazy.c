@@ -557,7 +557,7 @@ size_t ZSTD_HcFindBestMatch_generic (
         const U32 dmsMinChain = dmsSize > dmsChainSize ? dmsSize - dmsChainSize : 0;
 
         size_t hash = ZSTD_hashPtr(ip, dms->cParams.hashLog - dms->cParams.searchLog - 1, dms->cParams.minMatch) << (dms->cParams.searchLog + 1);
-        nbAttempts = MIN(dms->hashTable[hash++], nbAttempts);
+        nbAttempts = MIN(dms->hashTable[hash], nbAttempts);
         matchIndex = dms->hashTable[++hash];
 
         for ( ; (matchIndex>dmsLowestIndex) & (nbAttempts>0) ; nbAttempts--) {
