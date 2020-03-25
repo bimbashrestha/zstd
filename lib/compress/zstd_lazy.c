@@ -475,7 +475,58 @@ U32 ZSTD_insertAndFindFirstIndex(ZSTD_matchState_t* ms, const BYTE* ip) {
     return ZSTD_insertAndFindFirstIndex_internal(ms, cParams, ip, ms->cParams.minMatch);
 }
 
-FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState(
+void ZSTD_lazy_loadDictioanry(ZSTD_matchState_t* ms, const BYTE* ip)
+{
+    U32 const target = (U32)(ip - ms->window.base);
+    for (U32 idx = ms->nextToUpdate; idx < target; idx++) {
+        U32 const h = ZSTD_hashPtr(ms->window.base + idx, 
+            ms->cParams.hashLog - ms->cParams.searchLog, 
+            ms->cParams.minMatch) << ms->cParams.searchLog;
+        memmove(ms->hashTable + h + 1, ms->hashTable + h, (1U << ms->cParams.searchLog) - 1);
+        ms->hashTable[h] = idx; 
+    }
+    ms->nextToUpdate = target;
+}
+
+FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState_open(
+                        size_t* offsetPtr, size_t* ml, ZSTD_matchState_t* ms,
+                        U32 matchIndex, U32 const dictLimit, U32 const mls,
+                        U32 nbAttempts, const BYTE* const iLimit, 
+                        const BYTE* const prefixStart,
+                        U32 const current, const BYTE* const ip)
+{
+    const ZSTD_matchState_t* const dms = ms->dictMatchState;
+    const U32 dmsChainSize         = (1 << dms->cParams.chainLog);
+    const U32 dmsLowestIndex       = dms->window.dictLimit;
+    const BYTE* const dmsBase      = dms->window.base;
+    const BYTE* const dmsEnd       = dms->window.nextSrc;
+    const U32 dmsSize              = (U32)(dmsEnd - dmsBase);
+    const U32 dmsIndexDelta        = dictLimit - dmsSize;
+    const U32 dmsMinChain = dmsSize > dmsChainSize ? dmsSize - dmsChainSize : 0;
+
+    U32 hash = ZSTD_hashPtr(ip, dms->cParams.hashLog - dms->cParams.searchLog, mls) << dms->cParams.searchLog;
+    matchIndex = dms->hashTable[hash];
+
+    for ( ; (matchIndex>dmsLowestIndex) & (nbAttempts>0) ; nbAttempts--) {
+        size_t currentMl=0;
+        const BYTE* const match = dmsBase + matchIndex;
+        assert(match+4 <= dmsEnd);
+        if (MEM_read32(match) == MEM_read32(ip))   /* assumption : matchIndex <= dictLimit-4 (by table construction) */
+            currentMl = ZSTD_count_2segments(ip+4, match+4, iLimit, dmsEnd, prefixStart) + 4;
+
+        /* save best solution */
+        if (currentMl > *ml) {
+            *ml = currentMl;
+            *offsetPtr = current - (matchIndex + dmsIndexDelta) + ZSTD_REP_MOVE;
+            if (ip+currentMl == iLimit) break; /* best possible, avoids read overflow on next attempt */
+        }
+
+        if (matchIndex <= dmsMinChain) break;
+        matchIndex = dms->hashTable[++hash];
+    }
+}
+
+FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState_dev(
                         size_t* offsetPtr, size_t* ml, ZSTD_matchState_t* ms,
                         U32 matchIndex, U32 const dictLimit, U32 const mls,
                         U32 nbAttempts, const BYTE* const iLimit, 
@@ -512,6 +563,17 @@ FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState(
         if (matchIndex <= dmsMinChain) break;
         matchIndex = dmsChainTable[matchIndex & dmsChainMask];
     }
+}
+
+FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState(
+                        size_t* offsetPtr, size_t* ml, ZSTD_matchState_t* ms,
+                        U32 matchIndex, U32 const dictLimit, U32 const mls,
+                        U32 nbAttempts, const BYTE* const iLimit, 
+                        const BYTE* const prefixStart,
+                        U32 const current, const BYTE* const ip)
+{
+    ZSTD_HcFindBestMatch_dictMatchState_open(offsetPtr, ml, ms, matchIndex, dictLimit, 
+        mls, nbAttempts, iLimit, prefixStart, current, ip);
 }
 
 /* inlining is important to hardwire a hot branch (template emulation) */
