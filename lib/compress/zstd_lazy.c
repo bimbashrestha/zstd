@@ -488,42 +488,7 @@ void ZSTD_lazy_loadDictioanry(ZSTD_matchState_t* ms, const BYTE* ip)
     ms->nextToUpdate = target;
 }
 
-/*
-CLANG
-./zstd-dev-clang -b4 -e10 -D ~/datasets/github-dict -r ~/datasets/github
- 4# 9114 files       :   7484607 ->    713981 (10.48), 519.0 MB/s ,1826.7 MB/s
- 5# 9114 files       :   7484607 ->    722440 (10.36), 241.9 MB/s ,1837.3 MB/s
- 6# 9114 files       :   7484607 ->    717555 (10.43), 124.5 MB/s ,1874.8 MB/s
- 7# 9114 files       :   7484607 ->    721883 (10.37),  98.3 MB/s ,1680.1 MB/s
- 8# 9114 files       :   7484607 ->    724778 (10.33),  77.5 MB/s ,1614.2 MB/s
- 9# 9114 files       :   7484607 ->    734156 (10.19),  59.5 MB/s ,1583.2 MB/s
-10# 9114 files       :   7484607 ->    741250 (10.10),  39.1 MB/s ,1532.9 MB/s
-./zstd -b4 -e10 -D ~/datasets/github-dict -r ~/datasets/github
- 4# 9114 files       :   7484607 ->    713981 (10.48), 525.2 MB/s ,1847.7 MB/s
- 5# 9114 files       :   7484607 ->    751971 (9.953), 262.2 MB/s ,1799.9 MB/s
- 6# 9114 files       :   7484607 ->    743264 (10.07), 135.2 MB/s ,1887.3 MB/s
- 7# 9114 files       :   7484607 ->    746094 (10.03), 110.8 MB/s ,1711.6 MB/s
- 8# 9114 files       :   7484607 ->    723917 (10.34),  99.0 MB/s ,1721.4 MB/s
- 9# 9114 files       :   7484607 ->    723528 (10.34),  86.3 MB/s ,1703.3 MB/s
-10# 9114 files       :   7484607 ->    727153 (10.29),  70.8 MB/s ,1680.0 MB/s
-GCC
-./zstd-dev-gcc -b4 -e10 -D ~/datasets/github-dict -r ~/datasets/github
- 4# 9114 files       :   7484607 ->    713981 (10.48), 541.0 MB/s ,1890.6 MB/s
- 5# 9114 files       :   7484607 ->    722440 (10.36), 190.6 MB/s ,1919.3 MB/s
- 6# 9114 files       :   7484607 ->    717555 (10.43), 108.8 MB/s ,1958.8 MB/s
- 7# 9114 files       :   7484607 ->    721883 (10.37),  87.5 MB/s ,1723.5 MB/s
- 8# 9114 files       :   7484607 ->    724778 (10.33),  70.2 MB/s ,1646.8 MB/s
- 9# 9114 files       :   7484607 ->    734156 (10.19),  54.5 MB/s ,1613.0 MB/s
-10# 9114 files       :   7484607 ->    741250 (10.10),  37.6 MB/s ,1562.0 MB/s
-./zstd -b4 -e10 -D ~/datasets/github-dict -r ~/datasets/github
- 4# 9114 files       :   7484607 ->    713981 (10.48), 549.1 MB/s ,1895.8 MB/s
- 5# 9114 files       :   7484607 ->    751971 (9.953), 212.1 MB/s ,1844.1 MB/s
- 6# 9114 files       :   7484607 ->    743264 (10.07), 121.7 MB/s ,1932.0 MB/s
- 7# 9114 files       :   7484607 ->    746094 (10.03), 100.4 MB/s ,1739.8 MB/s
- 8# 9114 files       :   7484607 ->    723917 (10.34),  92.5 MB/s ,1745.8 MB/s
- 9# 9114 files       :   7484607 ->    723528 (10.34),  81.4 MB/s ,1723.6 MB/s
-10# 9114 files       :   7484607 ->    727153 (10.29),  67.1 MB/s ,1700.8 MB/s
-*/
+
 FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState_open(
                         size_t* offsetPtr, size_t* ml, ZSTD_matchState_t* ms,
                         U32 matchIndex, U32 const dictLimit, U32 const mls,
