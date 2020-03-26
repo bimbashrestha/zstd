@@ -634,6 +634,8 @@ size_t ZSTD_HcFindBestMatch_generic (
     U32 nbAttempts = 1U << cParams->searchLog;
     size_t ml=4-1;
 
+    PREFETCH_L2(ms->dictMatchState->chainTable);
+
     /* HC4 match finder */
     U32 matchIndex = ZSTD_insertAndFindFirstIndex_internal(ms, cParams, ip, mls);
 
@@ -663,7 +665,6 @@ size_t ZSTD_HcFindBestMatch_generic (
     }
 
     if (dictMode == ZSTD_dictMatchState) {
-        PREFETCH_L1(ms->dictMatchState->chainTable);
         ZSTD_HcFindBestMatch_dictMatchState(offsetPtr, &ml, ms, 
             matchIndex, dictLimit, mls, nbAttempts, iLimit, prefixStart, current, ip);
     }
