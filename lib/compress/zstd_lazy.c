@@ -502,9 +502,9 @@ void ZSTD_lazy_changeChainTable(ZSTD_matchState_t* ms)
         U32 const rh = h << 4;
         int flag = ms->hashTable[rh] > 0;
         if (flag) {
-            ms->chainTable[h / 32] |= 1 << (h % 32);
+            ms->chainTable[h / 32] |= 1U << (h % 32);
         } else {
-            ms->chainTable[h / 32] &= ~(1U << (h & 32));
+            ms->chainTable[h / 32] &= ~(1U << (h % 32));
         }
     }
 }
@@ -632,7 +632,6 @@ size_t ZSTD_HcFindBestMatch_generic (
     const U32 lowLimit = isDictionary ? lowestValid : withinMaxDistance;
     const U32 minChain = current > chainSize ? current - chainSize : 0;
     U32 nbAttempts = 1U << cParams->searchLog;
-    PREFETCH_L1(ms->dictMatchState->chainTable);
     size_t ml=4-1;
 
     /* HC4 match finder */
