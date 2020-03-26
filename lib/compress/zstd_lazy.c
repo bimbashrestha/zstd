@@ -632,6 +632,7 @@ size_t ZSTD_HcFindBestMatch_generic (
     const U32 lowLimit = isDictionary ? lowestValid : withinMaxDistance;
     const U32 minChain = current > chainSize ? current - chainSize : 0;
     U32 nbAttempts = 1U << cParams->searchLog;
+    PREFETCH_L1(ms->dictMatchState->chainTable);
     size_t ml=4-1;
 
     /* HC4 match finder */
@@ -663,7 +664,6 @@ size_t ZSTD_HcFindBestMatch_generic (
     }
 
     if (dictMode == ZSTD_dictMatchState) {
-        PREFETCH_L1(ms->dictMatchState->chainTable);
         ZSTD_HcFindBestMatch_dictMatchState(offsetPtr, &ml, ms, 
             matchIndex, dictLimit, mls, nbAttempts, iLimit, prefixStart, current, ip);
     }
