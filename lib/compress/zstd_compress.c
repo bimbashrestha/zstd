@@ -1093,7 +1093,7 @@ ZSTD_sizeof_matchState(const ZSTD_compressionParameters* const cParams,
                        const U32 forCCtx)
 {
     size_t const chainSize = (cParams->strategy == ZSTD_fast) ? 0 : ((size_t)1 << cParams->chainLog);
-    size_t const hSize = ((size_t)1) << 21;
+    size_t const hSize = ((size_t)1) << cParams->hashLog;
     U32    const hashLog3 = (forCCtx && cParams->minMatch==3) ? MIN(ZSTD_HASHLOG3_MAX, cParams->windowLog) : 0;
     size_t const h3Size = hashLog3 ? ((size_t)1) << hashLog3 : 0;
     /* We don't use ZSTD_cwksp_alloc_size() here because the tables aren't
@@ -1330,7 +1330,7 @@ ZSTD_reset_matchState(ZSTD_matchState_t* ms,
                 const ZSTD_resetTarget_e forWho)
 {
     size_t const chainSize = (cParams->strategy == ZSTD_fast) ? 0 : ((size_t)1 << cParams->chainLog);
-    size_t const hSize = ((size_t)1) << 21;
+    size_t const hSize = ((size_t)1) << cParams->hashLog;
     U32    const hashLog3 = ((forWho == ZSTD_resetTarget_CCtx) && cParams->minMatch==3) ? MIN(ZSTD_HASHLOG3_MAX, cParams->windowLog) : 0;
     size_t const h3Size = hashLog3 ? ((size_t)1) << hashLog3 : 0;
 
