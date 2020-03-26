@@ -517,7 +517,6 @@ FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState_open(
     U32 hash = ZSTD_hashPtr(ip, 17, mls) << 4;
     nbAttempts = MIN(dms->hashTable[hash], nbAttempts);
     matchIndex = dms->hashTable[++hash];
-    size_t i = 0;
 
     for ( ; (matchIndex>dmsLowestIndex) & (nbAttempts>0) ; nbAttempts--) {
         size_t currentMl=0;
@@ -534,7 +533,6 @@ FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState_open(
         }
 
         if (matchIndex <= dmsMinChain) break;
-        i++;
         matchIndex = dms->hashTable[++hash];
     }
 }
