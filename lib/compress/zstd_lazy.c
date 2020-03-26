@@ -482,11 +482,11 @@ void ZSTD_lazy_loadDictioanry(ZSTD_matchState_t* ms, const BYTE* ip)
     U32 const chainMask = (1 << ms->cParams.chainLog) - 1;
     for (U32 idx = ms->nextToUpdate; idx < target; idx++) {
         U32 const h = ZSTD_hashPtr(ms->window.base + idx, 17, ms->cParams.minMatch) << 2;
-        chainTable[idx & chainMask] = ms->hashTable[h + 3];
-        ms->hashTable[h + 3] = ms->hashTable[h + 2];
-        ms->hashTable[h + 2] = ms->hashTable[h + 1];
-        ms->hashTable[h + 1] = ms->hashTable[h];
+        chainTable[idx & chainMask] = ms->hashTable[h];
         ms->hashTable[h] = idx;
+        ms->hashTable[h + 1] = chainTable[idx & chainMask];
+        ms->hashTable[h + 2] = chainTable[ms->hashTable[h + 1] & chainMask];
+        ms->hashTable[h + 3] = chainTable[ms->hashTable[h + 2] & chainMask];        
     }
     ms->nextToUpdate = target;
 }
@@ -529,7 +529,12 @@ FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState_open(
 
         if (matchIndex <= dmsMinChain) break;
         i++;
-        matchIndex = i > 4 ? dmsChainTable[matchIndex & dmsChainMask] : dms->hashTable[++hash];
+        if (matchIndex == 4) {
+            size_t const id = dms->hashTable[hash - 4];
+            matchIndex = dmsChainTable[dmsChainTable[dmsChainTable[id & dmsChainMask] & dmsChainMask] & dmsChainMask];
+        } else if (matchIndex > 3) {
+            matchIndex = dmsChainTable[matchIndex & dmsChainMask];
+        } else matchIndex = dms->hashTable[++hash];
     }
 }
 
