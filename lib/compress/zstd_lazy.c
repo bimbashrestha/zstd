@@ -610,6 +610,8 @@ size_t ZSTD_HcFindBestMatch_generic (
     U32 nbAttempts = 1U << cParams->searchLog;
     size_t ml=4-1;
 
+    PREFETCH_L1(ms->dictMatchState->hashTable + (ZSTD_hashPtr(ip, 17, mls) << 3));
+
     /* HC4 match finder */
     U32 matchIndex = ZSTD_insertAndFindFirstIndex_internal(ms, cParams, ip, mls);
 
