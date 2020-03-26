@@ -529,9 +529,9 @@ FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState_open(
 
         if (matchIndex <= dmsMinChain) break;
         i++;
-        if (matchIndex == 4) {
+        if (i == 4) {
             matchIndex = dmsChainTable[matchIndex & dmsChainMask];
-        } else if (matchIndex > 3) {
+        } else if (i > 3) {
             matchIndex = dmsChainTable[matchIndex & dmsChainMask];
         } else matchIndex = dms->hashTable[++hash];
     }
