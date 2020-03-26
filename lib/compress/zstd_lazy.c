@@ -517,6 +517,8 @@ FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState_open(
     if (nbAttempts == 0)
         return;
 
+    PREFETCH_L1(dms->chainTable + dms->hashTable[hash + 6]);
+
     size_t i = 0;
     for ( ; (matchIndex>dmsLowestIndex) & (nbAttempts>0) ; nbAttempts--) {
         size_t currentMl=0;
