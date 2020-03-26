@@ -528,12 +528,12 @@ FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState_open(
     const U32 dmsMinChain = dmsSize > dmsChainSize ? dmsSize - dmsChainSize : 0;
 
     U32 hash = ZSTD_hashPtr(ip, 17, mls);
-    int flag = dmsChainTable[hash / 32] & (1 << (hash % 32));
+    // int flag = dmsChainTable[hash / 32] & (1 << (hash % 32));
 
-    if (!flag) return;
-
+    // if (!flag) return;
     hash <<= 4;
     nbAttempts = MIN(dms->hashTable[hash], nbAttempts);
+    if (nbAttempts == 0) return;
     matchIndex = dms->hashTable[++hash];
     size_t i = 0;
 
@@ -633,8 +633,6 @@ size_t ZSTD_HcFindBestMatch_generic (
     const U32 minChain = current > chainSize ? current - chainSize : 0;
     U32 nbAttempts = 1U << cParams->searchLog;
     size_t ml=4-1;
-
-    PREFETCH_L2(ms->dictMatchState->chainTable);
 
     /* HC4 match finder */
     U32 matchIndex = ZSTD_insertAndFindFirstIndex_internal(ms, cParams, ip, mls);
