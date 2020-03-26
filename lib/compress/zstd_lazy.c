@@ -482,11 +482,13 @@ void ZSTD_lazy_loadDictioanry(ZSTD_matchState_t* ms, const BYTE* ip)
     U32 const chainMask = (1 << ms->cParams.chainLog) - 1;
     for (U32 idx = ms->nextToUpdate; idx < target; idx++) {
         U32 const h = ZSTD_hashPtr(ms->window.base + idx, 17, ms->cParams.minMatch) << 3;
-        chainTable[idx & chainMask] = ms->hashTable[h + 1];
-        ms->hashTable[h]++;
+        for (int i = MIN((1U << ms->cParams.searchLog), ms->hashTable[h]) - 7 - 1; i >= 0; i--)
+            chainTable[ms->hashTable[h + 6] + i + 1] = chainTable[ms->hashTable[h + 6] + i];
+        chainTable[ms->hashTable[h + 6]] = ms->hashTable[h + 7];   
+        for (int i = MIN(7, ms->hashTable[h]) - 1; i >= 1; i--)
+            ms->hashTable[h + i + 1] = ms->hashTable[h + i];
         ms->hashTable[h + 1] = idx;
-        for (U32 i = 1; i < 7; i++)
-            ms->hashTable[h + i + 1] = chainTable[ms->hashTable[h + i] & chainMask];
+        ms->hashTable[h]++;
     }
     ms->nextToUpdate = target;
 }
@@ -500,6 +502,7 @@ FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState_open(
 {
     const ZSTD_matchState_t* const dms = ms->dictMatchState;
     const U32 dmsChainSize         = (1 << dms->cParams.chainLog);
+    const U32 dmsChainMask         = dmsChainSize - 1;
     const U32 dmsLowestIndex       = dms->window.dictLimit;
     const BYTE* const dmsBase      = dms->window.base;
     const BYTE* const dmsEnd       = dms->window.nextSrc;
@@ -514,6 +517,7 @@ FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState_open(
     if (nbAttempts == 0)
         return;
 
+    size_t i = 0;
     for ( ; (matchIndex>dmsLowestIndex) & (nbAttempts>0) ; nbAttempts--) {
         size_t currentMl=0;
         const BYTE* const match = dmsBase + matchIndex;
@@ -529,7 +533,13 @@ FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState_open(
         }
 
         if (matchIndex <= dmsMinChain) break;
-        matchIndex = dms->hashTable[++hash];
+        if (i < 6)
+            matchIndex = dms->hashTable[++hash];
+        else if (i > 6)
+            matchIndex = dms->chainTable[matchIndex];
+        else
+            matchIndex = dms->chainTable[matchIndex & dmsChainMask];
+        i++;
     }
 }
 
