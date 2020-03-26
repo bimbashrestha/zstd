@@ -628,8 +628,8 @@ size_t ZSTD_HcFindBestMatch_generic (
     U32 nbAttempts = 1U << cParams->searchLog;
     size_t ml=4-1;
 
-    U32 const hash = ZSTD_hashPtr(ip, 17, mls) << 4;
-    PREFETCH_L1(ms->dictMatchState->hashTable + hash);
+    U32 const dictHash = (ZSTD_hashPtr(ip, 17, mls) << 4);
+    PREFETCH_L1(ms->dictMatchState->hashTable + dictHash);
 
     /* HC4 match finder */
     U32 matchIndex = ZSTD_insertAndFindFirstIndex_internal(ms, cParams, ip, mls);
@@ -659,9 +659,40 @@ size_t ZSTD_HcFindBestMatch_generic (
         matchIndex = NEXT_IN_CHAIN(matchIndex, chainMask);
     }
 
-    if (dictMode == ZSTD_dictMatchState && ms->dictMatchState->hashTable[hash]) {
-        ZSTD_HcFindBestMatch_dictMatchState(offsetPtr, &ml, ms, 
-            matchIndex, dictLimit, mls, nbAttempts, iLimit, prefixStart, current, ip);
+    if (dictMode == ZSTD_dictMatchState) {
+        const ZSTD_matchState_t* const dms = ms->dictMatchState;
+        const U32* const dmsChainTable = dms->chainTable;
+        const U32 dmsChainSize         = (1 << dms->cParams.chainLog);
+        const U32 dmsChainMask         = dmsChainSize - 1;
+        const U32 dmsLowestIndex       = dms->window.dictLimit;
+        const BYTE* const dmsBase      = dms->window.base;
+        const BYTE* const dmsEnd       = dms->window.nextSrc;
+        const U32 dmsSize              = (U32)(dmsEnd - dmsBase);
+        const U32 dmsIndexDelta        = dictLimit - dmsSize;
+        const U32 dmsMinChain = dmsSize > dmsChainSize ? dmsSize - dmsChainSize : 0;
+
+        U32 hash = ZSTD_hashPtr(ip, 17, mls) << 4;
+        nbAttempts = MIN(dms->hashTable[hash], nbAttempts);
+        if (nbAttempts == 0) return ml;
+        matchIndex = dms->hashTable[++hash];
+
+        for ( ; (matchIndex>dmsLowestIndex) & (nbAttempts>0) ; nbAttempts--) {
+            size_t currentMl=0;
+            const BYTE* const match = dmsBase + matchIndex;
+            assert(match+4 <= dmsEnd);
+            if (MEM_read32(match) == MEM_read32(ip))   /* assumption : matchIndex <= dictLimit-4 (by table construction) */
+                currentMl = ZSTD_count_2segments(ip+4, match+4, iLimit, dmsEnd, prefixStart) + 4;
+
+            /* save best solution */
+            if (currentMl > ml) {
+                ml = currentMl;
+                *offsetPtr = current - (matchIndex + dmsIndexDelta) + ZSTD_REP_MOVE;
+                if (ip+currentMl == iLimit) break; /* best possible, avoids read overflow on next attempt */
+            }
+
+            if (matchIndex <= dmsMinChain) break;
+            matchIndex = dms->hashTable[++hash];
+        }
     }
 
     return ml;
