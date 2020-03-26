@@ -480,7 +480,7 @@ void ZSTD_lazy_loadDictioanry(ZSTD_matchState_t* ms, const BYTE* ip)
     U32 const target = (U32)(ip - ms->window.base);
     for (U32 idx = ms->nextToUpdate; idx < target; idx++) {
         U32 const h = ZSTD_hashPtr(ms->window.base + idx, 17, ms->cParams.minMatch) << 4;
-        memmove(ms->hashTable + h + 2, ms->hashTable + h + 1, (1U << 4) - 2);
+        memmove(ms->hashTable + h + 2, ms->hashTable + h + 1, (1 << 4) - 2);
         ms->hashTable[h + 1] = idx;
         ms->hashTable[h]++; 
     }
