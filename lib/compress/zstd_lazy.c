@@ -659,7 +659,7 @@ size_t ZSTD_HcFindBestMatch_generic (
         matchIndex = NEXT_IN_CHAIN(matchIndex, chainMask);
     }
 
-    if (dictMode == ZSTD_dictMatchState) {
+    if (dictMode == ZSTD_dictMatchState && ms->dictMatchState->hashTable[hash]) {
         ZSTD_HcFindBestMatch_dictMatchState(offsetPtr, &ml, ms, 
             matchIndex, dictLimit, mls, nbAttempts, iLimit, prefixStart, current, ip);
     }
