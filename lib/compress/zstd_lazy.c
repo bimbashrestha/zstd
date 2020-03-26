@@ -482,9 +482,10 @@ void ZSTD_lazy_loadDictioanry(ZSTD_matchState_t* ms, const BYTE* ip)
     U32 const chainMask = (1 << ms->cParams.chainLog) - 1;
     for (U32 idx = ms->nextToUpdate; idx < target; idx++) {
         U32 const h = ZSTD_hashPtr(ms->window.base + idx, 17, ms->cParams.minMatch) << 3;
-        chainTable[idx & chainMask] = ms->hashTable[h];
-        ms->hashTable[h] = idx;
-        for (U32 i = 0; i < 7; i++)
+        chainTable[idx & chainMask] = ms->hashTable[h + 1];
+        ms->hashTable[h]++;
+        ms->hashTable[h + 1] = idx;
+        for (U32 i = 1; i < 7; i++)
             ms->hashTable[h + i + 1] = chainTable[ms->hashTable[h + i] & chainMask];
     }
     ms->nextToUpdate = target;
@@ -507,7 +508,11 @@ FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState_open(
     const U32 dmsMinChain = dmsSize > dmsChainSize ? dmsSize - dmsChainSize : 0;
 
     U32 hash = ZSTD_hashPtr(ip, 17, mls) << 3;
-    matchIndex = dms->hashTable[hash];
+    nbAttempts = MIN(nbAttempts, dms->hashTable[hash]);    
+    matchIndex = dms->hashTable[++hash];
+
+    if (nbAttempts == 0)
+        return;
 
     for ( ; (matchIndex>dmsLowestIndex) & (nbAttempts>0) ; nbAttempts--) {
         size_t currentMl=0;
