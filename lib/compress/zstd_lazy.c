@@ -530,8 +530,7 @@ FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState_open(
         if (matchIndex <= dmsMinChain) break;
         i++;
         if (matchIndex == 4) {
-            size_t const id = dms->hashTable[hash - 4];
-            matchIndex = dmsChainTable[dmsChainTable[dmsChainTable[id & dmsChainMask] & dmsChainMask] & dmsChainMask];
+            matchIndex = dmsChainTable[matchIndex & dmsChainMask];
         } else if (matchIndex > 3) {
             matchIndex = dmsChainTable[matchIndex & dmsChainMask];
         } else matchIndex = dms->hashTable[++hash];
