@@ -496,6 +496,19 @@ void ZSTD_lazy_loadDictioanry(ZSTD_matchState_t* ms, const BYTE* ip)
     ms->nextToUpdate = target;
 }
 
+void ZSTD_lazy_changeChainTable(ZSTD_matchState_t* ms)
+{
+    for (U32 h = 0; h < (1U << 17); h++) {
+        U32 const rh = h << 4;
+        int flag = ms->hashTable[rh] > 0;
+        if (flag) {
+            ms->chainTable[h / 32] |= 1 << (h % 32);
+        } else {
+            ms->chainTable[h / 32] &= ~(1U << (h & 32));
+        }
+    }
+}
+
 FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState_open(
                         size_t* offsetPtr, size_t* ml, ZSTD_matchState_t* ms,
                         U32 matchIndex, U32 const dictLimit, U32 const mls,
@@ -514,9 +527,15 @@ FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState_open(
     const U32 dmsIndexDelta        = dictLimit - dmsSize;
     const U32 dmsMinChain = dmsSize > dmsChainSize ? dmsSize - dmsChainSize : 0;
 
-    U32 hash = ZSTD_hashPtr(ip, 17, mls) << 4;
+    U32 hash = ZSTD_hashPtr(ip, 17, mls);
+    int flag = dmsChainTable[hash / 32] & (1 << (hash % 32));
+
+    if (!flag) return;
+
+    hash <<= 4;
     nbAttempts = MIN(dms->hashTable[hash], nbAttempts);
     matchIndex = dms->hashTable[++hash];
+    size_t i = 0;
 
     for ( ; (matchIndex>dmsLowestIndex) & (nbAttempts>0) ; nbAttempts--) {
         size_t currentMl=0;
@@ -533,6 +552,7 @@ FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState_open(
         }
 
         if (matchIndex <= dmsMinChain) break;
+        i++;
         matchIndex = dms->hashTable[++hash];
     }
 }

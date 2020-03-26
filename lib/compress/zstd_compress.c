@@ -2835,6 +2835,7 @@ static size_t ZSTD_loadDictionaryContent(ZSTD_matchState_t* ms,
 
         ip = ichunk;
     }
+    ZSTD_lazy_changeChainTable(ms);
 
     ms->nextToUpdate = (U32)(iend - ms->window.base);
     return 0;
