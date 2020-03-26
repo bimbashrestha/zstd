@@ -479,10 +479,8 @@ void ZSTD_lazy_loadDictioanry(ZSTD_matchState_t* ms, const BYTE* ip)
 {
     U32 const target = (U32)(ip - ms->window.base);
     for (U32 idx = ms->nextToUpdate; idx < target; idx++) {
-        U32 const h = ZSTD_hashPtr(ms->window.base + idx, 
-            ms->cParams.hashLog - ms->cParams.searchLog - 1, 
-            ms->cParams.minMatch) << (ms->cParams.searchLog + 1);
-        memmove(ms->hashTable + h + 2, ms->hashTable + h + 1, (1U << ms->cParams.searchLog) - 2);
+        U32 const h = ZSTD_hashPtr(ms->window.base + idx, 17, ms->cParams.minMatch) << 4;
+        memmove(ms->hashTable + h + 2, ms->hashTable + h + 1, (1U << 4) - 2);
         ms->hashTable[h + 1] = idx;
         ms->hashTable[h]++; 
     }
@@ -497,15 +495,15 @@ FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState_opensize(
                         U32 const current, const BYTE* const ip)
 {
     const ZSTD_matchState_t* const dms = ms->dictMatchState;
-    const U32 dmsChainSize         = (1 << dms->cParams.chainLog);
     const U32 dmsLowestIndex       = dms->window.dictLimit;
+    const U32 dmsChainSize         = (1 << dms->cParams.chainLog);
     const BYTE* const dmsBase      = dms->window.base;
     const BYTE* const dmsEnd       = dms->window.nextSrc;
     const U32 dmsSize              = (U32)(dmsEnd - dmsBase);
     const U32 dmsIndexDelta        = dictLimit - dmsSize;
     const U32 dmsMinChain = dmsSize > dmsChainSize ? dmsSize - dmsChainSize : 0;
 
-    U32 hash = ZSTD_hashPtr(ip, dms->cParams.hashLog - dms->cParams.searchLog - 1, mls) << (dms->cParams.searchLog + 1);
+    U32 hash = ZSTD_hashPtr(ip, 17, mls) << 4;
     nbAttempts = MIN(dms->hashTable[hash], nbAttempts);
     matchIndex = dms->hashTable[++hash];
 
