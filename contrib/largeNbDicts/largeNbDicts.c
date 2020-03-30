@@ -393,7 +393,7 @@ createBufferCollection_fromFiles(const char* const * fileNamesTable, unsigned nb
 /*---  ddict_collection_t  ---*/
 
 typedef struct {
-    ZSTD_DDict** ddicts;
+    ZSTD_CDict** ddicts;
     size_t nbDDict;
 } ddict_collection_t;
 
@@ -402,7 +402,7 @@ static const ddict_collection_t kNullDDictCollection = { NULL, 0 };
 static void freeDDictCollection(ddict_collection_t ddictc)
 {
     for (size_t dictNb=0; dictNb < ddictc.nbDDict; dictNb++) {
-        ZSTD_freeDDict(ddictc.ddicts[dictNb]);
+        ZSTD_freeCDict(ddictc.ddicts[dictNb]);
     }
     free(ddictc.ddicts);
 }
@@ -410,11 +410,11 @@ static void freeDDictCollection(ddict_collection_t ddictc)
 /* returns .buffers=NULL if operation fails */
 static ddict_collection_t createDDictCollection(const void* dictBuffer, size_t dictSize, size_t nbDDict)
 {
-    ZSTD_DDict** const ddicts = malloc(nbDDict * sizeof(ZSTD_DDict*));
+    ZSTD_CDict** const ddicts = malloc(nbDDict * sizeof(ZSTD_CDict*));
     assert(ddicts != NULL);
     if (ddicts==NULL) return kNullDDictCollection;
     for (size_t dictNb=0; dictNb < nbDDict; dictNb++) {
-        ddicts[dictNb] = ZSTD_createDDict(dictBuffer, dictSize);
+        ddicts[dictNb] = ZSTD_createCDict(dictBuffer, dictSize, 6);
         assert(ddicts[dictNb] != NULL);
     }
     ddict_collection_t ddictc;
@@ -430,14 +430,14 @@ void shuffleDictionaries(ddict_collection_t dicts)
     size_t const nbDicts = dicts.nbDDict;
     for (size_t r=0; r<nbDicts; r++) {
         size_t const d = (size_t)rand() % nbDicts;
-        ZSTD_DDict* tmpd = dicts.ddicts[d];
+        ZSTD_CDict* tmpd = dicts.ddicts[d];
         dicts.ddicts[d] = dicts.ddicts[r];
         dicts.ddicts[r] = tmpd;
     }
     for (size_t r=0; r<nbDicts; r++) {
         size_t const d1 = (size_t)rand() % nbDicts;
         size_t const d2 = (size_t)rand() % nbDicts;
-        ZSTD_DDict* tmpd = dicts.ddicts[d1];
+        ZSTD_CDict* tmpd = dicts.ddicts[d1];
         dicts.ddicts[d1] = dicts.ddicts[d2];
         dicts.ddicts[d2] = tmpd;
     }
@@ -486,7 +486,7 @@ static size_t compressBlocks(size_t* cSizes,   /* optional (can be NULL). If pre
 /* ---  Benchmark  --- */
 
 typedef struct {
-    ZSTD_DCtx* dctx;
+    ZSTD_CCtx* dctx;
     size_t nbDicts;
     size_t dictNb;
     ddict_collection_t dictionaries;
@@ -495,7 +495,7 @@ typedef struct {
 decompressInstructions createDecompressInstructions(ddict_collection_t dictionaries)
 {
     decompressInstructions di;
-    di.dctx = ZSTD_createDCtx();
+    di.dctx = ZSTD_createCCtx();
     assert(di.dctx != NULL);
     di.nbDicts = dictionaries.nbDDict;
     di.dictNb = 0;
@@ -505,16 +505,16 @@ decompressInstructions createDecompressInstructions(ddict_collection_t dictionar
 
 void freeDecompressInstructions(decompressInstructions di)
 {
-    ZSTD_freeDCtx(di.dctx);
+    ZSTD_freeCCtx(di.dctx);
 }
 
 /* benched function */
 size_t decompress(const void* src, size_t srcSize, void* dst, size_t dstCapacity, void* payload)
 {
     decompressInstructions* const di = (decompressInstructions*) payload;
-
-    size_t const result = ZSTD_decompress_usingDDict(di->dctx,
-                                        dst, dstCapacity,
+    
+    size_t const result = ZSTD_compress_usingCDict(di->dctx,
+                                        dst, srcSize,
                                         src, srcSize,
                                         di->dictionaries.ddicts[di->dictNb]);
 
@@ -633,7 +633,6 @@ int bench(const char** fileNameTable, unsigned nbFiles,
     dstSlices.slicePtrs = sliceTable;
     dstSlices.nbSlices = nbBlocks;
 
-
     /* dictionary determination */
     buffer_t const dictBuffer = createDictionaryBuffer(dictionary,
                                 srcs.buffer.ptr,
@@ -662,7 +661,7 @@ int bench(const char** fileNameTable, unsigned nbFiles,
     /* now dstSlices contain the real compressed size of each block, instead of the maximum capacity */
     shrinkSizes(dstSlices, cSizes);
 
-    size_t const dictMem = ZSTD_estimateDDictSize(dictBuffer.size, ZSTD_dlm_byCopy);
+    size_t const dictMem = ZSTD_estimateCDictSize(dictBuffer.size, ZSTD_dlm_byCopy);
     unsigned const nbDicts = nbDictMax ? nbDictMax : nbBlocks;
     size_t const allDictMem = dictMem * nbDicts;
     DISPLAYLEVEL(3, "generating %u dictionaries, using %.1f MB of memory \n",
@@ -676,7 +675,11 @@ int bench(const char** fileNameTable, unsigned nbFiles,
     buffer_collection_t resultCollection = createBufferCollection_fromSliceCollectionSizes(srcSlices);
     CONTROL(resultCollection.buffer.ptr != NULL);
 
-    result = benchMem(resultCollection.slices, dstSlices, dictionaries, nbRounds);
+    for (size_t i = 0; i < srcSlices.nbSlices; i++) {
+        memcpy(resultCollection.slices.slicePtrs[i], srcSlices.slicePtrs[i], srcSlices.capacities[i]);
+        resultCollection.slices.capacities[i] = srcSlices.capacities[i];
+    }
+    result = benchMem(dstSlices, resultCollection.slices, dictionaries, nbRounds);
 
     /* free all heap objects in reverse order */
     freeBufferCollection(resultCollection);
