@@ -518,6 +518,9 @@ FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState_open(
         size_t currentMl=0;
         const BYTE* const match = dmsBase + matchIndex;
         assert(match+4 <= dmsEnd);
+
+        PREFETCH_L1(dmsBase + ms->dictMatchState->hashTable[hash + 2]);
+
         if (MEM_read32(match) == MEM_read32(ip))   /* assumption : matchIndex <= dictLimit-4 (by table construction) */
             currentMl = ZSTD_count_2segments(ip+4, match+4, iLimit, dmsEnd, prefixStart) + 4;
 
@@ -613,8 +616,6 @@ size_t ZSTD_HcFindBestMatch_generic (
     U32 const dictHash = ZSTD_hashPtr(ip, 17, mls) << 3;
     const BYTE* const dmsBase = ms->dictMatchState->window.base;
     PREFETCH_L1(ms->dictMatchState->hashTable + dictHash);
-    for (U32 i = 1; i < MIN(8, ms->dictMatchState->hashTable[dictHash]); i++) 
-        PREFETCH_L1(dmsBase + ms->dictMatchState->hashTable[dictHash + i]);
 
     /* HC4 match finder */
     U32 matchIndex = ZSTD_insertAndFindFirstIndex_internal(ms, cParams, ip, mls);
@@ -643,6 +644,9 @@ size_t ZSTD_HcFindBestMatch_generic (
         if (matchIndex <= minChain) break;
         matchIndex = NEXT_IN_CHAIN(matchIndex, chainMask);
     }
+
+    PREFETCH_L1(dmsBase + ms->dictMatchState->hashTable[dictHash + 1]);
+    PREFETCH_L1(dmsBase + ms->dictMatchState->hashTable[dictHash + 2]);
 
     if (dictMode == ZSTD_dictMatchState)
         ZSTD_HcFindBestMatch_dictMatchState(offsetPtr, &ml, ms, 
