@@ -502,6 +502,9 @@ size_t ZSTD_HcFindBestMatch_generic (
     const U32 minChain = current > chainSize ? current - chainSize : 0;
     U32 nbAttempts = 1U << cParams->searchLog;
     size_t ml=4-1;
+	
+    U32 const dictHash = ZSTD_hashPtr(ip, ms->dictMatchState->cParams.hashLog, mls);
+    PREFETCH_L1(ms->dictMatchState->window.base + ms->dictMatchState->hashTable[dictHash]);
 
     /* HC4 match finder */
     U32 matchIndex = ZSTD_insertAndFindFirstIndex_internal(ms, cParams, ip, mls);
