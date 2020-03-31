@@ -554,6 +554,8 @@ static int benchMem(slice_collection_t dstBlocks,
         .blockResults = NULL
     };
 
+    size_t totalSrcSize = 0; for (size_t i = 0; i < srcBlocks.nbSlices; i++) totalSrcSize += srcBlocks.capacities[i];
+
     for (;;) {
         BMK_runOutcome_t const outcome = BMK_benchTimedFn(benchState, bp);
         CONTROL(BMK_isSuccessful_runOutcome(outcome));
@@ -561,7 +563,7 @@ static int benchMem(slice_collection_t dstBlocks,
         BMK_runTime_t const result = BMK_extract_runTime(outcome);
         double const dTime_ns = result.nanoSecPerRun;
         double const dTime_sec = (double)dTime_ns / 1000000000;
-        size_t const srcSize = result.sumOfReturn;
+        size_t const srcSize = totalSrcSize;
         double const dSpeed_MBps = (double)srcSize / dTime_sec / (1 MB);
         if (dSpeed_MBps > bestSpeed) bestSpeed = dSpeed_MBps;
         DISPLAY("Decompression Speed : %.1f MB/s \r", bestSpeed);
