@@ -613,7 +613,13 @@ size_t ZSTD_HcFindBestMatch_generic (
     U32 const dictHash = ZSTD_hashPtr(ip, 17, mls) << 3;
     const BYTE* const dmsBase = ms->dictMatchState->window.base;
     PREFETCH_L1(ms->dictMatchState->hashTable + dictHash);
-    PREFETCH_L2(dmsBase + ms->dictMatchState->hashTable[dictHash + 1]);
+    PREFETCH_L1(dmsBase + ms->dictMatchState->hashTable[dictHash + 1]);
+    PREFETCH_L1(dmsBase + ms->dictMatchState->hashTable[dictHash + 2]);
+    PREFETCH_L1(dmsBase + ms->dictMatchState->hashTable[dictHash + 3]);
+    PREFETCH_L1(dmsBase + ms->dictMatchState->hashTable[dictHash + 4]);
+    PREFETCH_L1(dmsBase + ms->dictMatchState->hashTable[dictHash + 5]);
+    PREFETCH_L1(dmsBase + ms->dictMatchState->hashTable[dictHash + 6]);
+    PREFETCH_L1(dmsBase + ms->dictMatchState->hashTable[dictHash + 7]);
 
     /* HC4 match finder */
     U32 matchIndex = ZSTD_insertAndFindFirstIndex_internal(ms, cParams, ip, mls);
