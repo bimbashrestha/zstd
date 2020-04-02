@@ -505,13 +505,13 @@ static void ZSTD_validateChain(const U32* const chain,
     if (chainSize == 0)
         return;
     U32 tested = 0;
-    for (U32 i = 0; i < MIN(chainSize, 4); i++) {
+    for (U32 i = 0; i < MIN(chainSize, 3); i++) {
         assert(hashTable[hash + i] == chain[i]);
         tested++;
     }
     if (tested == chainSize)
         return;
-    for (U32 i = 4; i < chainSize; i++)
+    for (U32 i = 3; i < chainSize; i++)
         assert(chainTable[chain[3] + i] == chain[i]);
 }
 
@@ -533,19 +533,19 @@ void ZSTD_lazy_preprocess(ZSTD_matchState_t* ms)
     memset(hashTable, 0, hashTableSize * sizeof(U32));
     memset(chainTable, 0, chainTableSize * sizeof(U32));
     
+    U32 chainIdx = 0;
     for (U32 hash = 0; hash < hashTableSize; hash++) {
         if (hashTableCopy[hash] != 0) {
             U32 const chainSize = ZSTD_getChain(chain, hashTableCopy,
                 chainTableCopy, hashLog, chainLog, hash);
             U32 const realHash = hash << 2;
-            U32 chainIdx = 0;
             for (U32 i = 0; i < chainSize; i++) {
                 if (i == 3)
-                    chainIdx = chain[i];
-                if (i < 4)
+                    hashTable[realHash + i] = chainIdx;
+                if (i < 3)
                     hashTable[realHash + i] = chain[i];
                 else 
-                    chainTable[chainIdx + (i - 4)] = chain[i];
+                    chainTable[chainIdx++] = chain[i];
             }
             ZSTD_validateChain(chain, hashTable, chainTable, realHash, chainSize);
         }
