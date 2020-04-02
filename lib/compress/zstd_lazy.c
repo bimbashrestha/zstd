@@ -483,13 +483,13 @@ void ZSTD_lazy_loadDictioanry(ZSTD_matchState_t* ms, const BYTE* ip)
 
 static U32 ZSTD_getChain(U32* const chain, const U32* const hashTableCopy, 
     const U32* const chainTableCopy, U32 const hashLog, U32 const chainLog, 
-    U32 const hash)
+    U32 const searchLog, U32 const hash)
 {
     U32 const chainTableSize = (1U << chainLog);
     U32 const chainMask = chainTableSize - 1;
     U32 chainSize = 0;
     U32 idx = hashTableCopy[hash];
-    while (idx) {
+    for (U32 i = 0; i < (1U << searchLog); i++) {
         chain[chainSize++] = idx;
         idx = chainTableCopy[idx & chainMask];
         if (idx == 0)
@@ -512,7 +512,7 @@ static void ZSTD_validateChain(const U32* const chain,
     if (tested == chainSize)
         return;
     for (U32 i = 3; i < chainSize; i++)
-        assert(chainTable[chain[3] + i] == chain[i]);
+        assert(chainTable[hashTable[hash + 3] + (i - 3)] == chain[i]);
 }
 
 void ZSTD_lazy_preprocess(ZSTD_matchState_t* ms)
@@ -521,6 +521,7 @@ void ZSTD_lazy_preprocess(ZSTD_matchState_t* ms)
     U32* const chainTable = ms->chainTable;
     U32 const hashLog = ms->cParams.hashLog;
     U32 const chainLog = ms->cParams.chainLog;
+    U32 const searchLog = ms->cParams.searchLog;
     U32 const hashTableSize = (1U << hashLog);
     U32 const chainTableSize = (1U << chainLog);
 
@@ -537,20 +538,22 @@ void ZSTD_lazy_preprocess(ZSTD_matchState_t* ms)
     for (U32 hash = 0; hash < hashTableSize; hash++) {
         if (hashTableCopy[hash] != 0) {
             U32 const chainSize = ZSTD_getChain(chain, hashTableCopy,
-                chainTableCopy, hashLog, chainLog, hash);
+                chainTableCopy, hashLog, chainLog, searchLog, hash);
             U32 const realHash = hash << 2;
             for (U32 i = 0; i < chainSize; i++) {
-                if (i == 3)
-                    hashTable[realHash + i] = chainIdx;
                 if (i < 3)
                     hashTable[realHash + i] = chain[i];
-                else 
+                else {
+                    if (i == 3)
+                        hashTable[realHash + i] = chainIdx;
                     chainTable[chainIdx++] = chain[i];
+                }
             }
+            chainIdx++;
             ZSTD_validateChain(chain, hashTable, chainTable, realHash, chainSize);
         }
     }
-
+    
     free((void*)chain);
     free((void*)hashTableCopy);
     free((void*)chainTableCopy);
@@ -575,10 +578,7 @@ FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState_chain(
     const U32 dmsMinChain = dmsSize > dmsChainSize ? dmsSize - dmsChainSize : 0;
 
     U32 hash = ZSTD_hashPtr(ip, dms->cParams.hashLog, mls) << 2;
-    U32 chainIdx = 0;
     matchIndex = dms->hashTable[hash];
-    if (matchIndex == 0)
-        return;
 
     for (U32 i = 1; (matchIndex>dmsLowestIndex) & (nbAttempts>0) ; i++, nbAttempts--) {
         size_t currentMl=0;
@@ -599,13 +599,11 @@ FORCE_INLINE_TEMPLATE void ZSTD_HcFindBestMatch_dictMatchState_chain(
         if (i < 4)
             matchIndex = dms->hashTable[++hash];
         else if (i == 4) {
-            chainIdx = matchIndex & dmsChainMask;
-            matchIndex = dmsChainTable[chainIdx];
-        } else 
-            matchIndex = dmsChainTable[chainIdx + (i - 4)];
-
-        if (matchIndex == 0)
-            return;
+            hash = dms->hashTable[hash];
+            matchIndex = dmsChainTable[hash];
+        } else {
+            matchIndex = dmsChainTable[++hash];
+        }
     }
 }
 
