@@ -40,6 +40,15 @@ case $prog in
     *)       prog=zstdgrep;;
 esac
 
+all_patterns() {
+    local part IFS=\'; set -- $1""
+    unset _patterns
+    for part do
+        _patterns=${_patterns+$_patterns\'\\\'\'}$part
+        pattern_found=$((pattern_found+1))
+    done
+}
+
 # skip all options and pass them on to grep taking care of options
 # with arguments, and if -e was supplied
 
@@ -53,10 +62,10 @@ while [ "$#" -gt 0 ] && [ "${endofopts}" -eq 0 ]; do
             fi
             case "$1" in
                 -e)
-                    pattern="$2"
+                    pattern=""
                     pattern_found=1
-                    shift 2
-                    break
+                    all_patterns "$2"
+                    grep_args="${grep_args} $1 ${_patterns}"
                     ;;
                 -f)
                     pattern_found=2
