@@ -257,6 +257,7 @@ rm -f tmp_grep*
 println "\n===> zstdgrep mulitple -e"
 echo "start" > tmp_grep
 echo "stop" >> tmp_grep
+ln -sf "$ZSTD_BIN" zstdcat
 $ZSTDGREP -e start -e stop tmp_grep > tmp_grep_out1
 grep -e start -e stop tmp_grep > tmp_grep_out2
 $DIFF tmp_grep_out1 tmp_grep_out2
