@@ -278,6 +278,14 @@ grep -e start -e stop tmp_grep > tmp_grep_out2
 $DIFF tmp_grep_out1 tmp_grep_out2
 rm -f tmp_grep*
 
+println "\n===> zstdgrep multiple --regexp"
+echo "start" > tmp_grep
+echo "stop" >> tmp_grep
+ZCAT=./zstdcat $ZSTDGREP --regexp start --regexp stop tmp_grep > tmp_grep_out1
+grep -e start -e stop tmp_grep > tmp_grep_out2
+$DIFF tmp_grep_out1 tmp_grep_out2
+rm -f tmp_grep*
+
 println "\n===>  --exclude-compressed flag"
 rm -rf precompressedFilterTestDir
 mkdir -p precompressedFilterTestDir
