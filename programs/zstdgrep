@@ -61,15 +61,11 @@ while [ "$#" -gt 0 ] && [ "${endofopts}" -eq 0 ]; do
                 exit 1
             fi
             case "$1" in
-                -e)
+                -ef)
                     pattern=""
                     pattern_found=1
                     all_patterns "$2"
                     grep_args="${grep_args} $1 ${_patterns}"
-                    ;;
-                -f)
-                    pattern_found=2
-                    grep_args="${grep_args} $1 $2"
                     ;;
                 *)
                     grep_args="${grep_args} $1 $2"
