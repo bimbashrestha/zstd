@@ -114,25 +114,23 @@ EXIT_CODE=0
 if [ "$#" -lt 1 ]; then
     # ... on stdin
     # shellcheck disable=SC2086
-    eval "${zcat} -fq - | ${grep} ${grep_args} -- ${pattern} -"
+    eval "${zcat} -fq - | ${grep} ${grep_args} -- ${pattern}"
     EXIT_CODE=$?
 else
     # ... on all files given on the command line
     if [ "${silent}" -lt 1 ] && [ "$#" -gt 1 ]; then
         grep_args="-H ${grep_args}"
     fi
-    set -f
     while [ "$#" -gt 0 ]; do
         # shellcheck disable=SC2086
         if [ $pattern_found -eq 2 ]; then
-            "${zcat}" -- "$1" | "${grep}" --label="${1}" ${grep_args} -- -
+            eval "${zcat} -fq -- \"$1\" | ${grep} --label=\"${1}\" ${grep_args} --"
         else
-            "${zcat}" -- "$1" | "${grep}" --label="${1}" ${grep_args} -- "${pattern}" -
+            eval "${zcat} -fq -- \"$1\" | ${grep} --label=\"${1}\" ${grep_args} ${pattern} --"
         fi
         [ "$?" -ne 0 ] && EXIT_CODE=1
         shift
     done
-    set +f
 fi
 
 exit "${EXIT_CODE}"
