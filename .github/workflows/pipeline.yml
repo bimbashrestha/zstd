@@ -5,11 +5,23 @@ on:
     branches: [ dev ]
 
 jobs:
-  build-linux:
-
+  make-test:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2
-    - name: make test 
-      run: make test
+      - uses: actions/checkout@dev
+      - name: make test
+        run: make test
+  gcc-6-7-libzstdmt-compilation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@dev
+      - name: gcc-6 + gcc-7 + libzstdmt compilation
+        run: | 
+          make gcc6install gcc7install
+          CC=gcc-6 CFLAGS=-Werror make -j all
+          make clean
+          CC=gcc-7 CFLAGS=-Werror make -j all
+          make clean
+          LDFLAGS=-Wl,--no-undefined make -C lib libzstd-mt
+          make -C tests zbufftest-dll
+  
