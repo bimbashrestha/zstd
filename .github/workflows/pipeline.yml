@@ -8,13 +8,13 @@ jobs:
   make-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@dev
+      - uses: actions/checkout@v2
       - name: make test
         run: make test
   gcc-6-7-libzstdmt-compilation:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@dev
+      - uses: actions/checkout@v2
       - name: gcc-6 + gcc-7 + libzstdmt compilation
         run: | 
           make gcc6install gcc7install
