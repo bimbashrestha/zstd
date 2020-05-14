@@ -35,7 +35,7 @@ jobs:
         make -C tests zbufftest-dll
     
   gcc-8-asan-ubsan-testzstd:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-16.04 # fails on 18.04 
     steps:
     - uses: actions/checkout@v2
     - name: gcc-8 + ASan + UBSan + Test Zstd 
@@ -75,13 +75,13 @@ jobs:
     - name: Minimal Decompressor Macros
       run: |
         make clean
-        make -j all check ZSTD_LIB_MINIFY=1 MOREFLAGS="-Werror"
+        DEVNULLRIGHTS=test make -j all check ZSTD_LIB_MINIFY=1 MOREFLAGS="-Werror"
         make clean
-        make -j all check MOREFLAGS="-Werror -DHUF_FORCE_DECOMPRESS_X1 -DZSTD_FORCE_DECOMPRESS_SEQUENCES_SHORT"
+        DEVNULLRIGHTS=test make -j all check MOREFLAGS="-Werror -DHUF_FORCE_DECOMPRESS_X1 -DZSTD_FORCE_DECOMPRESS_SEQUENCES_SHORT"
         make clean
-        make -j all check MOREFLAGS="-Werror -DHUF_FORCE_DECOMPRESS_X2 -DZSTD_FORCE_DECOMPRESS_SEQUENCES_LONG"
+        DEVNULLRIGHTS=test make -j all check MOREFLAGS="-Werror -DHUF_FORCE_DECOMPRESS_X2 -DZSTD_FORCE_DECOMPRESS_SEQUENCES_LONG"
         make clean
-        make -j all check MOREFLAGS="-Werror -DZSTD_NO_INLINE -DZSTD_STRIP_ERROR_STRINGS"
+        DEVNULLRIGHTS=test make -j all check MOREFLAGS="-Werror -DZSTD_NO_INLINE -DZSTD_STRIP_ERROR_STRINGS"
 
   cmake-build-and-test-check:
     runs-on: ubuntu-latest
@@ -161,9 +161,9 @@ jobs:
     - name: Valgrind + Fuzz Test Stack Mode
       run: |
         make valgrindinstall
-        make -C tests clean valgrindTest
+        DEVNULLRIGHTS=test make -C tests clean valgrindTest
         make clean
-        make -C tests test-fuzzer-stackmode
+        DEVNULLRIGHTS=test make -C tests test-fuzzer-stackmode
 
   qemu-arm-fuzz:
     runs-on: ubuntu-latest
