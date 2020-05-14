@@ -57,7 +57,7 @@ jobs:
         CC=gcc-6 make -j uasan-test-zstd32
 
   clang-38-msan-testzstd:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-16.04 # fails on 18.04 
     steps:
     - uses: actions/checkout@v2
     - name: clang-3.8 + MSan + Test Zstd
@@ -109,7 +109,7 @@ jobs:
         CC=gcc-6 CFLAGS="-O2 -m32" make uasan-fuzztest
 
   clang-38-msan-fuzz:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-16.04 # fails on 18.04
     steps:
     - uses: actions/checkout@v2
     - name: clang-3.8 + MSan + Fuzz Test
