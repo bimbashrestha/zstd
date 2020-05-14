@@ -1,0 +1,40 @@
+name: trusty
+
+on:
+  pull_request:
+    branches: [ master, dev, actionsTest ]
+
+jobs:
+  # TODO: this needs to run on trusty
+  # Currently it does not. We will need to 
+  # set up a self-hosting service 
+  static-analyzer-scanbuild:
+    runs-on: ubuntu-16.04 # should be trusty
+    steps:
+    - uses: actions/checkout@v2
+    - name: static analyzer scanbuild
+      run: make staticAnalyze
+
+  # TODO: this needs to run on trusty
+  # Currently it does not. We will need to 
+  # set up a self-hosting service 
+  arm-build-test:
+    runs-on: ubuntu-16.04 # should be trusty
+    steps:
+    - uses: actions/checkout@v2
+    - name: ARM Build Test (trusty)
+      run: | 
+        make arminstall
+        make armbuild
+      
+  # TODO: this needs to run on trusty
+  # Currently it does not. We will need to 
+  # set up a self-hosting service 
+  qemu-ppc-fuzz:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Qemu PPC + Fuzz Test 
+      run: | 
+        make ppcinstall
+        make ppcfuzz
