@@ -105,7 +105,7 @@ jobs:
         make gcc6install libc6install
         CC=gcc-6 CFLAGS="-O2 -m32" make uasan-fuzztest
         
-  clang-3.8-msan-fuzz:
+  clang-38-msan-fuzz:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
