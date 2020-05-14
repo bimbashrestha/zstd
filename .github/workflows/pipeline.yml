@@ -1,0 +1,15 @@
+name: pipeline
+
+on:
+  pull_request:
+    branches: [ dev ]
+
+jobs:
+  build-linux:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: make test 
+      run: make test
