@@ -69,7 +69,7 @@ jobs:
         CC=clang-3.8 make clean msan-test-zstd HAVE_ZLIB=0 HAVE_LZ4=0 HAVE_LZMA=0
 
   min-decomp-macros:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-16.04 # fails on 18.04 
     steps:
     - uses: actions/checkout@v2
     - name: Minimal Decompressor Macros
@@ -155,7 +155,7 @@ jobs:
         CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ CFLAGS="-Werror -O1" make zstd
 
   valgrind-fuzz:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-16.04 # fails on 18.04 
     steps:
     - uses: actions/checkout@v2
     - name: Valgrind + Fuzz Test Stack Mode
