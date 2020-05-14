@@ -63,10 +63,9 @@ jobs:
     - name: clang-3.8 + MSan + Test Zstd
       run: |
         # make clang38install (doesn't work)
-        wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key|sudo apt-key add -
-        deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8 main
+        sudo apt-add-repository "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8 main"
         sudo apt-get update
-        sudo apt-get install clang-3.8
+        sudo apt-get install clang-3.8 lldb-3.8
         CC=clang-3.8 make clean msan-test-zstd HAVE_ZLIB=0 HAVE_LZ4=0 HAVE_LZMA=0
 
   min-decomp-macros:
@@ -116,10 +115,9 @@ jobs:
     - name: clang-3.8 + MSan + Fuzz Test
       run: |
         # make clang38install (doesn't work)
-        wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key|sudo apt-key add -
-        deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8 main
+        sudo apt-add-repository "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8 main"
         sudo apt-get update
-        sudo apt-get install clang-3.8
+        sudo apt-get install clang-3.8 lldb-3.8
         CC=clang-3.8 make clean msan-fuzztest
 
   asan-ubsan-msan-regression:
