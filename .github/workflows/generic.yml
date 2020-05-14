@@ -65,7 +65,7 @@ jobs:
         # make clang38install (doesn't work)
         sudo apt-add-repository "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8 main"
         sudo apt-get update
-        sudo apt-get install clang-3.8 lldb-3.8
+        sudo apt-get install clang-3.8
         CC=clang-3.8 make clean msan-test-zstd HAVE_ZLIB=0 HAVE_LZ4=0 HAVE_LZMA=0
 
   min-decomp-macros:
@@ -117,7 +117,7 @@ jobs:
         # make clang38install (doesn't work)
         sudo apt-add-repository "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.8 main"
         sudo apt-get update
-        sudo apt-get install clang-3.8 lldb-3.8
+        sudo apt-get install clang-3.8
         CC=clang-3.8 make clean msan-fuzztest
 
   asan-ubsan-msan-regression:
