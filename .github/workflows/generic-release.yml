@@ -13,6 +13,7 @@ jobs:
   # ppc64le + fuzz test
   # Qemu PPC64 + Fuzz test
   # Qemu aarch64 + Fuzz Test (on Xenial)
+  # versions comp   
   # meson test
 
   osx:
@@ -31,14 +32,6 @@ jobs:
     - name: zbuff test
       run: |
         make -C tests test-zbuff
-        
-  versions-comp:
-    runs-on: ubuntu-16.04
-    steps:
-    - uses: actions/checkout@v2
-    - name: Versions Compatibility Test
-      run: |
-        make -C tests versionsTest
         
   tsan:
     runs-on: ubuntu-16.04
