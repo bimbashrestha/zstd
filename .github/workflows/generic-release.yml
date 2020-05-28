@@ -79,7 +79,7 @@ jobs:
         unzip ~/ninja.zip -d ~/.local/bin
         travis_retry curl -o ~/get-pip.py -L 'https://bootstrap.pypa.io/get-pip.py' &&
         python3 ~/get-pip.py --user &&
-        pip3 install --user meson
+        sudo pip3 install meson
         
         # test
         meson setup \
