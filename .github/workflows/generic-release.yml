@@ -67,4 +67,26 @@ jobs:
         make -C tests test-pool
         make clean
         bash tests/libzstd_partial_builds.sh
+        
+  meson: 
+    runs-on: ubuntu-16.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Meson + clang
+      run: |
+        sudo apt-get install python3 python3-pip python3-setuptools python3-wheel ninja-build
+        meson setup \
+            --buildtype=debugoptimized \
+            -Db_lundef=false \
+            -Dauto_features=enabled \
+            -Dbin_programs=true \
+            -Dbin_tests=true \
+            -Dbin_contrib=true \
+            -Ddefault_library=both \
+             build/meson builddir
+        pushd builddir
+        ninja
+        meson test --verbose --no-rebuild
+        DESTDIR=./staging ninja install
+        tree ./staging
       
