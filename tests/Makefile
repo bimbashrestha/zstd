@@ -258,7 +258,7 @@ ifneq (,$(filter $(shell uname),Linux Darwin GNU/kFreeBSD GNU OpenBSD FreeBSD Ne
 HOST_OS = POSIX
 
 libzstdASan: 
-	$(MAKE) -C $(PGRDIR) MOREFLAGS="-fsanitize=address" zstd
+	$(MAKE) -C $(PRGDIR) MOREFLAGS="-fsanitize=address" zstd
 
 valgrindTest: VALGRIND = valgrind --leak-check=full --show-leak-kinds=all --error-exitcode=1
 valgrindTest: libzstdASan datagen fuzzer fullbench
