@@ -237,8 +237,7 @@ checkTag: checkTag.c $(ZSTDDIR)/zstd.h
 clean:
 	$(MAKE) -C $(ZSTDDIR) clean
 	$(MAKE) -C $(PRGDIR) clean
-	@$(RM) -fR $(TESTARTEFACT)
-	@$(RM) -rf tmp*  # some test directories are named tmp*
+	@$(RM) -fR $(TESTARTEFACT) @$(RM) -rf tmp*  # some test directories are named tmp*
 	@$(RM) core *.o *.tmp result* *.gcda dictionary *.zst \
         $(PRGDIR)/zstd$(EXT) $(PRGDIR)/zstd32$(EXT) \
         fullbench$(EXT) fullbench32$(EXT) \
@@ -258,8 +257,11 @@ clean:
 ifneq (,$(filter $(shell uname),Linux Darwin GNU/kFreeBSD GNU OpenBSD FreeBSD NetBSD DragonFly SunOS))
 HOST_OS = POSIX
 
+libzstdASan: 
+	$(MAKE) -C $(PRGDIR) MOREFLAGS="-fsanitize=address" zstd
+
 valgrindTest: VALGRIND = valgrind --leak-check=full --show-leak-kinds=all --error-exitcode=1
-valgrindTest: zstd datagen fuzzer fullbench
+valgrindTest: libzstdASan datagen fuzzer fullbench
 	@echo "\n ---- valgrind tests : memory analyzer ----"
 	$(VALGRIND) ./datagen -g50M > $(VOID)
 	$(VALGRIND) $(PRGDIR)/zstd ; if [ $$? -eq 0 ] ; then echo "zstd without argument should have failed"; false; fi
